@@ -80,7 +80,7 @@ git commit -m "Commit inicial"
 git branch -M main
 
 # 5. Conecta ao repositório remoto (Substitua a URL abaixo pela do seu repo!)
-git remote add origin [https://github.com/SEU-USUARIO/bnotasweb-frontend.git](https://github.com/SEU-USUARIO/bnotasweb-frontend.git)
+git remote add origin [https://github.com/fabiocleinti-eng/bnotasweb-frontend.git](https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git)
 
 # 6. Envia os arquivos
 git push -u origin main
