@@ -84,3 +84,12 @@ git remote add origin [https://github.com/fabiocleinti-eng/bnotasweb-frontend.gi
 
 # 6. Envia os arquivos
 git push -u origin main
+
+
+
+
+#                 AJUSTES NECESSARIOS                   
+
+# NECESSARIO ACESSAR O BANCO DE DADOS PARA INCLUIR A COLUNA COR E ATUALIZAR O PROJETO PARA ALTERAÇÕES NA SIDEBAR LATERAL!
+
+

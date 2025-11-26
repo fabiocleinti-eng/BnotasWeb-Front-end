@@ -4,6 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../core/services/note.service';
 import { Note } from '../../core/models/note.model';
 
+// Interface atualizada com índice para o Carrossel
+interface NoteGroup {
+  color: string;
+  notes: Note[];
+  isOpen: boolean;
+  currentIndex: number; // <--- NOVA PROPRIEDADE: Qual nota está aparecendo?
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -13,28 +21,16 @@ import { Note } from '../../core/models/note.model';
 })
 export class DashboardComponent implements OnInit {
   notes: Note[] = [];
-  filteredNotes: Note[] = [];
+  noteGroups: NoteGroup[] = []; 
   openNotes: Note[] = []; 
   searchTerm: string = '';
-
   showToast: boolean = false;
   toastMessage: string = '';
   
-  // Cores disponíveis
   availableColors: string[] = [
-    '#fff9c4', // Amarelo (Padrão)
-    '#ffcdd2', // Vermelho claro
-    '#f8bbd0', // Rosa
-    '#e1bee7', // Roxo
-    '#d1c4e9', // Violeta
-    '#c5cae9', // Indigo
-    '#bbdefb', // Azul
-    '#b3e5fc', // Azul claro
-    '#b2dfdb', // Verde água
-    '#c8e6c9', // Verde
-    '#f0f4c3', // Lima
-    '#ffe0b2', // Laranja
-    '#f5f5f5'  // Cinza/Branco
+    '#fff9c4', '#ffcdd2', '#f8bbd0', '#e1bee7', 
+    '#d1c4e9', '#c5cae9', '#bbdefb', '#b3e5fc', 
+    '#b2dfdb', '#c8e6c9', '#f0f4c3', '#ffe0b2', '#f5f5f5'
   ];
 
   constructor(private noteService: NoteService) {}
@@ -52,39 +48,83 @@ export class DashboardComponent implements OnInit {
   loadNotes(): void {
     this.noteService.getNotes().subscribe({
       next: (data) => {
-        // Aplica cor padrão se vier sem cor
-        this.notes = data.map(n => ({ ...n, cor: n.cor || '#fff9c4' }));
-        this.filterNotes();
+        this.notes = data.map(n => ({ 
+          ...n, 
+          cor: n.cor || '#fff9c4',
+          isCollapsed: false 
+        }));
+        this.organizeGroups();
       },
-      error: (err) => console.error('Erro ao carregar notas', err)
+      error: (err) => console.error('Erro', err)
     });
   }
 
   onSearch(event: any): void {
     this.searchTerm = event.target.value.toLowerCase();
-    this.filterNotes();
+    this.organizeGroups();
   }
 
-  filterNotes(): void {
-    if (!this.searchTerm) {
-      this.filteredNotes = this.notes;
-    } else {
-      this.filteredNotes = this.notes.filter(n => 
+  organizeGroups(): void {
+    let filtered = this.notes;
+
+    if (this.searchTerm) {
+      filtered = filtered.filter(n => 
         n.titulo.toLowerCase().includes(this.searchTerm) || 
         n.conteudo.toLowerCase().includes(this.searchTerm)
       );
     }
+
+    const groupsMap: { [key: string]: Note[] } = {};
+    
+    filtered.forEach(note => {
+      const color = note.cor || '#fff9c4';
+      if (!groupsMap[color]) {
+        groupsMap[color] = [];
+      }
+      groupsMap[color].push(note);
+    });
+
+    // Atualiza os grupos mantendo o estado se possível, ou reinicia
+    this.noteGroups = Object.keys(groupsMap).map(color => ({
+      color: color,
+      notes: groupsMap[color],
+      isOpen: true,
+      currentIndex: 0 // Começa mostrando a primeira nota
+    }));
+
+    this.noteGroups.sort((a, b) => a.color.localeCompare(b.color));
+  }
+
+  // --- FUNÇÕES DA ROLETA (CARROSSEL) ---
+  prevSlide(group: NoteGroup, event: Event): void {
+    event.stopPropagation();
+    if (group.currentIndex > 0) {
+      group.currentIndex--;
+    } else {
+      group.currentIndex = group.notes.length - 1; // Volta para a última (Loop)
+    }
+  }
+
+  nextSlide(group: NoteGroup, event: Event): void {
+    event.stopPropagation();
+    if (group.currentIndex < group.notes.length - 1) {
+      group.currentIndex++;
+    } else {
+      group.currentIndex = 0; // Volta para a primeira (Loop)
+    }
+  }
+
+  toggleGroup(group: NoteGroup): void {
+    group.isOpen = !group.isOpen;
   }
 
   openNote(note: Note): void {
     const alreadyOpen = this.openNotes.find(n => n.id === note.id);
     if (alreadyOpen) return;
-
     if (this.openNotes.length >= 4) {
       this.displayToast('Máximo de 4 notas abertas!');
       return;
     }
-    // Garante cor ao abrir
     this.openNotes.push({ ...note, cor: note.cor || '#fff9c4' }); 
   }
 
@@ -101,24 +141,19 @@ export class DashboardComponent implements OnInit {
     this.openNotes.splice(index, 1);
   }
 
-  // --- ATUALIZADA: Muda a cor no card E na lista lateral ---
   changeNoteColor(note: Note, color: string): void {
     note.cor = color;
-    
-    // Procura a nota correspondente na lista principal (Sidebar) pelo ID
     if (note.id) {
       const sidebarNote = this.notes.find(n => n.id === note.id);
-      if (sidebarNote) {
-        sidebarNote.cor = color; // Atualiza a cor visualmente na sidebar
-      }
+      if (sidebarNote) sidebarNote.cor = color;
     }
+    this.organizeGroups();
   }
 
   deleteFromSidebar(event: Event, note: Note): void {
     event.stopPropagation();
     if (!note.id) return;
-
-    if (confirm(`Excluir "${note.titulo}" permanentemente?`)) {
+    if (confirm(`Excluir "${note.titulo}"?`)) {
       this.noteService.deleteNote(note.id).subscribe(() => {
         this.loadNotes();
         const openIndex = this.openNotes.findIndex(n => n.id === note.id);
@@ -128,52 +163,35 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  toggleCollapse(event: Event, note: Note): void {
+    event.stopPropagation();
+    note.isCollapsed = !note.isCollapsed;
+  }
+
   saveNote(note: Note): void {
-    if (!note.titulo) {
-      this.displayToast('O título é obrigatório!');
-      return;
-    }
-
-    // Separa a cor para não enviar ao backend (se ele não suportar)
-    // Se suportar, pode enviar 'note' direto.
+    if (!note.titulo) { this.displayToast('Título obrigatório!'); return; }
     const { cor, ...noteToSend } = note;
-
     if (note.id) {
       this.noteService.updateNote(note.id, noteToSend).subscribe(() => {
-        this.loadNotes(); // Isso vai recarregar a lista do backend (perdendo a cor se não estiver salva lá)
-        // Mas como a cor está na memória em 'this.notes' via loadNotes, ela pode resetar.
-        // O ideal é que o backend salve a cor. Por enquanto, a cor persiste na sessão.
-        this.displayToast('Nota salva!');
+        this.changeNoteColor(note, note.cor!); 
+        this.displayToast('Salvo!');
       });
     } else {
-      this.noteService.createNote(noteToSend).subscribe((createdNote) => {
-        note.id = createdNote.id;
-        note.dataCriacao = createdNote.dataCriacao;
-        this.loadNotes();
-        this.displayToast('Nota criada!');
+      this.noteService.createNote(noteToSend).subscribe((created) => {
+        note.id = created.id;
+        note.dataCriacao = created.dataCriacao;
+        const newNote = { ...created, cor: note.cor };
+        this.notes.unshift(newNote);
+        this.organizeGroups();
+        this.displayToast('Criado!');
       });
     }
   }
 
-  formatText(command: string, value: string = ''): void {
-    document.execCommand(command, false, value);
-  }
-
-  updateContent(event: any, note: Note): void {
-    note.conteudo = event.target.innerHTML;
-  }
-
-  deleteNote(note: Note, index: number): void {
-    if (!note.id) {
-      this.closeNote(index);
-      return;
-    }
-    if (confirm('Excluir esta nota?')) {
-      this.noteService.deleteNote(note.id).subscribe(() => {
-        this.closeNote(index);
-        this.loadNotes();
-        this.displayToast('Nota excluída.');
-      });
-    }
+  formatText(cmd: string, val: string = '') { document.execCommand(cmd, false, val); }
+  updateContent(e: any, n: Note) { n.conteudo = e.target.innerHTML; }
+  deleteNote(n: Note, i: number) {
+    if(!n.id) { this.closeNote(i); return; }
+    if(confirm('Excluir?')) this.noteService.deleteNote(n.id).subscribe(() => { this.closeNote(i); this.loadNotes(); });
   }
 }

@@ -6,4 +6,5 @@ export interface Note {
   dataCriacao?: string;
   dataModificacao?: string;
   cor?: string;
+  isCollapsed?: boolean;
 }
