@@ -1,0 +1,166 @@
+.login-page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* --- LADO ESQUERDO (AZUL) --- */
+.login-left {
+  flex: 1;
+  background: linear-gradient(135deg, #00b4db, #0083b0); /* Gradiente Azul */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  position: relative;
+}
+
+/* Curva decorativa na borda direita (Opcional, para charme) */
+.login-left::after {
+  content: '';
+  position: absolute;
+  top: 0; right: -50px;
+  width: 100px; height: 100%;
+  background: inherit;
+  z-index: -1;
+}
+
+.login-content {
+  width: 100%;
+  max-width: 350px;
+  text-align: center;
+  padding: 20px;
+}
+
+h2 {
+  font-size: 2.5rem;
+  letter-spacing: 2px;
+  margin-bottom: 40px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* INPUTS ARREDONDADOS */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.rounded-input {
+  width: 100%;
+  padding: 15px 25px;
+  border-radius: 30px; /* Pílula */
+  border: none;
+  background: white;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: center; /* Texto centralizado como na imagem */
+  box-sizing: border-box;
+}
+
+.rounded-input::placeholder {
+  color: #aaa;
+  font-weight: 500;
+}
+
+/* OPÇÕES (Remember me) */
+.options {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 30px;
+  padding: 0 15px;
+  opacity: 0.9;
+}
+.remember-me input { margin-right: 5px; }
+.forgot-pass { cursor: pointer; text-decoration: underline; }
+
+/* BOTÃO VERDE/TEAL */
+.btn-submit {
+  width: 100%;
+  padding: 15px;
+  border-radius: 30px;
+  border: none;
+  background-color: #00d2a0; /* Verde Água vibrante */
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 210, 160, 0.4);
+  transition: transform 0.2s;
+  letter-spacing: 1px;
+}
+
+.btn-submit:hover {
+  transform: scale(1.05);
+  background-color: #00c495;
+}
+.btn-submit:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.switch-mode {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.switch-mode:hover { opacity: 1; text-decoration: underline; }
+
+
+/* --- LADO DIREITO (BRANCO) --- */
+.login-right {
+  flex: 1;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Simulação da Ilustração */
+.decoration-circle {
+  width: 300px;
+  height: 500px;
+  background: #e0f7fa;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 4px solid #0083b0;
+}
+
+.inner-circle {
+  font-size: 5rem;
+  background: white;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Toast de Erro */
+.error-toast {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff5252;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Responsivo para Celular */
+@media (max-width: 768px) {
+  .login-page { flex-direction: column; }
+  .login-right { display: none; } /* Esconde a imagem no celular */
+}

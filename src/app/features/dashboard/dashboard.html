@@ -1,0 +1,100 @@
+<div class="dashboard-container">
+  
+  <div class="toast-notification" *ngIf="showToast">{{ toastMessage }}</div>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Minhas Notas</h3>
+      <button class="btn-new-sidebar" (click)="createNote()">+ Nova</button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" placeholder="Buscar..." (input)="onSearch($event)">
+    </div>
+
+    <div class="notes-list-container">
+      
+      <div class="color-group" *ngFor="let group of noteGroups">
+        
+        <div class="group-header" (click)="toggleGroup(group)" [style.borderLeftColor]="group.color">
+          <div class="group-label">
+            <div class="color-badge" [style.backgroundColor]="group.color"></div>
+            <span class="count">{{ group.notes.length }} notas</span>
+          </div>
+          <span class="arrow">{{ group.isOpen ? '▼' : '▶' }}</span>
+        </div>
+
+        <div class="group-notes" *ngIf="group.isOpen">
+          <div 
+            class="mini-postit" 
+            *ngFor="let note of group.notes" 
+            (click)="openNote(note)"
+            [style.backgroundColor]="group.color"
+            [class.minimized]="note.isCollapsed"
+          >
+            <div class="mini-header">
+              <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
+              
+              <div class="header-icons">
+                <span *ngIf="note.favorita" class="mini-star">★</span>
+                <button class="btn-delete-sidebar" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
+                <button class="btn-collapse" (click)="toggleCollapse($event, note)">
+                  {{ note.isCollapsed ? '▼' : '▲' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="mini-body" *ngIf="!note.isCollapsed">
+              <div class="mini-content" [innerHTML]="note.conteudo | slice:0:40"></div>
+              <div class="mini-date" *ngIf="note.dataCriacao">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div *ngIf="noteGroups.length === 0" class="empty-list-msg">
+        Nenhuma nota encontrada.
+      </div>
+
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <div *ngIf="openNotes.length === 0" class="empty-workspace">
+      <h2>Área de Trabalho</h2>
+      <p>Clique em "+ Nova" ou selecione uma nota para editar.</p>
+    </div>
+    <div class="notes-grid">
+      <div class="postit-card" *ngFor="let note of openNotes; let i = index" [style.backgroundColor]="note.cor">
+        <div class="postit-header">
+          <input type="text" [(ngModel)]="note.titulo" placeholder="Título" class="postit-title-input">
+          <div class="postit-actions">
+            <button class="btn-icon" (click)="note.favorita = !note.favorita" [class.fav]="note.favorita">★</button>
+            <button class="btn-icon close" (click)="closeNote(i)">✕</button>
+          </div>
+        </div>
+        <div class="editor-toolbar" (mousedown)="$event.preventDefault()">
+          <button (click)="formatText('bold')"><b>B</b></button>
+          <button (click)="formatText('italic')"><i>I</i></button>
+          <button (click)="formatText('underline')"><u>U</u></button>
+          <div class="color-wrapper"><span style="color:red; font-weight:bold;">A</span><input type="color" (input)="formatText('foreColor', $any($event.target).value)"></div>
+          <div class="color-wrapper"><span style="background:yellow;">M</span><input type="color" (input)="formatText('hiliteColor', $any($event.target).value)"></div>
+        </div>
+        <div class="postit-content-editable" contenteditable="true" [innerHTML]="note.conteudo" (blur)="updateContent($event, note)"></div>
+        <div class="postit-footer-column">
+          <div class="colors-row">
+             <div *ngFor="let color of availableColors" class="color-dot" [style.backgroundColor]="color" (click)="changeNoteColor(note, color)" [class.selected]="note.cor === color"></div>
+          </div>
+          <div class="footer-bottom-row">
+            <span class="date" *ngIf="note.dataCriacao">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</span>
+            <div class="footer-btns">
+              <button class="btn-icon-trash" (click)="deleteNote(note, i)">🗑️</button>
+              <button class="btn-mini save" (click)="saveNote(note)">Salvar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
