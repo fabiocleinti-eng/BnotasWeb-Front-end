@@ -2,56 +2,61 @@
   
   <div class="login-left">
     <div class="login-content">
-      <h2>WELCOME</h2>
+      <h2>{{ isLoginMode ? 'BEM-VINDO' : 'CRIAR CONTA' }}</h2>
       
-      <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
+      <form *ngIf="isLoginMode" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
         
         <div class="input-group">
-          <input 
-            type="email" 
-            formControlName="email" 
-            placeholder="Username"
-            class="rounded-input"
-          >
+          <input type="email" formControlName="email" placeholder="Email" class="rounded-input">
+          <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-msg">
+            Email inválido
+          </div>
         </div>
         
         <div class="input-group">
-          <input 
-            type="password" 
-            formControlName="senha" 
-            placeholder="Password"
-            class="rounded-input"
-          >
+          <input type="password" formControlName="senha" placeholder="Senha" class="rounded-input">
         </div>
 
         <div class="options">
-          <label class="remember-me">
-            <input type="checkbox"> Remember me
-          </label>
-          <a class="forgot-pass">Forgot Password?</a>
+          <label class="remember-me"><input type="checkbox"> Lembrar-me</label>
+          <a class="forgot-pass">Esqueceu a senha?</a>
         </div>
         
-        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid">
-          SUBMIT
-        </button>
-
-        <p class="switch-mode" (click)="toggleMode()">
-          {{ isLoginMode ? "Don't have an account?" : "Already have an account?" }}
-        </p>
+        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid">ENTRAR</button>
       </form>
+
+      <form *ngIf="!isLoginMode" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
+        
+        <div class="input-group">
+          <input type="email" formControlName="email" placeholder="Seu melhor Email" class="rounded-input">
+          <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-msg">
+            Email inválido
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <input type="password" formControlName="senha" placeholder="Crie uma Senha" class="rounded-input">
+          <div *ngIf="registerForm.get('senha')?.invalid && registerForm.get('senha')?.touched" class="error-msg">
+            Mínimo 6 caracteres
+          </div>
+        </div>
+        
+        <button type="submit" class="btn-submit" [disabled]="registerForm.invalid">CADASTRAR</button>
+      </form>
+
+      <p class="switch-mode" (click)="toggleMode()">
+        {{ isLoginMode ? "Não tem conta? Cadastre-se" : "Já tem conta? Faça Login" }}
+      </p>
+
     </div>
   </div>
 
   <div class="login-right">
     <div class="decoration-circle">
-      <div class="inner-circle">
-        👤
-      </div>
+      <div class="inner-circle">👤</div>
     </div>
   </div>
 
-  <div *ngIf="errorMessage" class="error-toast">
-    {{ errorMessage }}
-  </div>
+  <div *ngIf="errorMessage" class="error-toast">{{ errorMessage }}</div>
 
 </div>

@@ -11,7 +11,7 @@
 .notes-list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
 
 /* --- GRUPOS DE CORES --- */
-.color-group { margin-bottom: 15px; }
+.color-group { margin-bottom: 10px; }
 .group-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 10px; cursor: pointer; background-color: #f8f9fa;
@@ -20,10 +20,17 @@
 }
 .group-header:hover { background-color: #eee; }
 
-.group-label { display: flex; align-items: center; gap: 10px; }
-.color-badge { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+.group-label { display: flex; align-items: center; gap: 8px; }
+.color-badge { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
 .count { font-size: 0.85rem; color: #555; font-weight: 600; }
 .arrow { font-size: 0.8rem; color: #999; }
+
+/* NOVO: BADGE DE FAVORITOS NA ABA */
+.group-fav-badge {
+  font-size: 0.75rem; color: #f57f17; background-color: #fff3e0;
+  padding: 1px 6px; border-radius: 8px; border: 1px solid #ffe0b2;
+  font-weight: bold;
+}
 
 .group-notes { padding-left: 10px; border-left: 2px solid #f0f0f0; margin-left: 10px; margin-top: 5px; }
 
@@ -43,12 +50,12 @@
 .mini-star { color: #ff9800; font-size: 0.9rem; }
 
 /* Botões Sidebar */
-.btn-delete-sidebar {
+.btn-delete-header {
   background: transparent; border: none; cursor: pointer; font-size: 0.9rem; color: #aaa; padding: 2px;
   opacity: 0; transition: all 0.2s;
 }
-.mini-postit:hover .btn-delete-sidebar { opacity: 1; }
-.btn-delete-sidebar:hover { color: #e74c3c; transform: scale(1.2); }
+.mini-postit:hover .btn-delete-header { opacity: 1; }
+.btn-delete-header:hover { color: #e74c3c; transform: scale(1.2); }
 
 .btn-collapse { background: transparent; border: none; cursor: pointer; font-size: 0.8rem; color: #777; padding: 2px; }
 .btn-collapse:hover { color: #333; background-color: rgba(0,0,0,0.05); border-radius: 4px; }
@@ -56,6 +63,7 @@
 .mini-body { margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px; }
 .mini-content { font-size: 0.85rem; color: #555; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-date { font-size: 0.7rem; color: #888; margin-top: 6px; text-align: right; font-style: italic; }
+.empty-list-msg { text-align: center; color: #999; margin-top: 20px; font-size: 0.9rem; }
 
 /* WORKSPACE & CARDS (IGUAIS) */
 .workspace { flex: 1; padding: 30px; overflow-y: auto; background-color: #ffffff; } 

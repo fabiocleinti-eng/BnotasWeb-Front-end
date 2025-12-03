@@ -20,6 +20,10 @@
           <div class="group-label">
             <div class="color-badge" [style.backgroundColor]="group.color"></div>
             <span class="count">{{ group.notes.length }} notas</span>
+            
+            <span class="group-fav-badge" *ngIf="group.favCount > 0" title="Favoritas neste grupo">
+              ★ {{ group.favCount }}
+            </span>
           </div>
           <span class="arrow">{{ group.isOpen ? '▼' : '▶' }}</span>
         </div>
@@ -37,7 +41,9 @@
               
               <div class="header-icons">
                 <span *ngIf="note.favorita" class="mini-star">★</span>
-                <button class="btn-delete-sidebar" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
+                
+                <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
+                
                 <button class="btn-collapse" (click)="toggleCollapse($event, note)">
                   {{ note.isCollapsed ? '▼' : '▲' }}
                 </button>
@@ -52,7 +58,7 @@
         </div>
 
       </div>
-
+      
       <div *ngIf="noteGroups.length === 0" class="empty-list-msg">
         Nenhuma nota encontrada.
       </div>

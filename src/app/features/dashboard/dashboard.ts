@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../core/services/note.service';
 import { Note } from '../../core/models/note.model';
 
-// Interface para o Grupo de Cores
+// Interface restaurada com o contador de favoritos
 interface NoteGroup {
   color: string;
   notes: Note[];
   isOpen: boolean;
+  favCount: number; // <--- NOVO: Contagem de favoritos do grupo
 }
 
 @Component({
@@ -20,7 +21,7 @@ interface NoteGroup {
 })
 export class DashboardComponent implements OnInit {
   notes: Note[] = [];
-  noteGroups: NoteGroup[] = []; // Lista de grupos em vez de lista plana
+  noteGroups: NoteGroup[] = []; // Voltamos a usar Grupos
   openNotes: Note[] = []; 
   searchTerm: string = '';
   showToast: boolean = false;
@@ -52,7 +53,7 @@ export class DashboardComponent implements OnInit {
           cor: n.cor || '#fff9c4',
           isCollapsed: false 
         }));
-        this.organizeGroups(); // Agrupa assim que carrega
+        this.organizeGroups(); // Agrupa por cor
       },
       error: (err) => console.error('Erro', err)
     });
@@ -63,7 +64,7 @@ export class DashboardComponent implements OnInit {
     this.organizeGroups();
   }
 
-  // --- LÓGICA DE AGRUPAMENTO ---
+  // LÓGICA DE AGRUPAMENTO RESTAURADA
   organizeGroups(): void {
     let filtered = this.notes;
 
@@ -76,7 +77,6 @@ export class DashboardComponent implements OnInit {
 
     const groupsMap: { [key: string]: Note[] } = {};
     
-    // Separa as notas em baldes por cor
     filtered.forEach(note => {
       const color = note.cor || '#fff9c4';
       if (!groupsMap[color]) {
@@ -85,18 +85,21 @@ export class DashboardComponent implements OnInit {
       groupsMap[color].push(note);
     });
 
-    // Cria o array de grupos
     this.noteGroups = Object.keys(groupsMap).map(color => {
-      // Tenta manter o estado aberto/fechado se o grupo já existia
       const existingGroup = this.noteGroups.find(g => g.color === color);
+      const notesInGroup = groupsMap[color];
+      
+      // Calcula favoritos neste grupo
+      const favorites = notesInGroup.filter(n => n.favorita).length;
+
       return {
         color: color,
-        notes: groupsMap[color],
-        isOpen: existingGroup ? existingGroup.isOpen : true // Padrão: Aberto
+        notes: notesInGroup,
+        isOpen: existingGroup ? existingGroup.isOpen : true,
+        favCount: favorites // <--- Armazena a contagem
       };
     });
 
-    // Ordena os grupos para que as cores fiquem sempre na mesma ordem
     this.noteGroups.sort((a, b) => a.color.localeCompare(b.color));
   }
 
@@ -133,33 +136,7 @@ export class DashboardComponent implements OnInit {
       const sidebarNote = this.notes.find(n => n.id === note.id);
       if (sidebarNote) sidebarNote.cor = color;
     }
-    this.organizeGroups(); // Reagrupa imediatamente
-  }
-
-  saveNote(note: Note): void {
-    if (!note.titulo) { this.displayToast('Título obrigatório!'); return; }
-    const { cor, ...noteToSend } = note; // O backend já aceita cor, mas mantemos compatibilidade
-
-    // Como atualizamos o backend para aceitar cor, podemos enviar o objeto completo se quiser
-    // Mas vamos manter seguro:
-    const payload = { ...noteToSend, cor: note.cor };
-
-    if (note.id) {
-      this.noteService.updateNote(note.id, payload).subscribe(() => {
-        this.loadNotes();
-        this.displayToast('Nota salva!');
-      });
-    } else {
-      this.noteService.createNote(payload).subscribe((created) => {
-        note.id = created.id;
-        note.dataCriacao = created.dataCriacao;
-        note.cor = created.cor || note.cor;
-        
-        this.notes.unshift(note);
-        this.organizeGroups();
-        this.displayToast('Criado!');
-      });
-    }
+    this.organizeGroups(); // Reagrupa imediatamente para mudar de pasta
   }
 
   deleteFromSidebar(event: Event, note: Note): void {
@@ -175,12 +152,38 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  deleteNote(note: Note, index: number): void {
-    if(!note.id) { this.closeNote(index); return; }
-    if(confirm('Excluir?')) this.noteService.deleteNote(note.id).subscribe(() => { this.closeNote(index); this.loadNotes(); });
+  saveNote(note: Note): void {
+    if (!note.titulo) { this.displayToast('Título obrigatório!'); return; }
+    const noteToSend = { ...note };
+
+    if (note.id) {
+      this.noteService.updateNote(note.id, noteToSend).subscribe(() => {
+        this.loadNotes(); 
+        this.displayToast('Nota salva!');
+      });
+    } else {
+      this.noteService.createNote(noteToSend).subscribe((created) => {
+        note.id = created.id;
+        note.dataCriacao = created.dataCriacao;
+        note.cor = created.cor || note.cor;
+        
+        this.notes.unshift(note);
+        this.organizeGroups();
+        this.displayToast('Nota criada!');
+      });
+    }
   }
 
   formatText(cmd: string, val: string = '') { document.execCommand(cmd, false, val); }
   updateContent(e: any, n: Note) { n.conteudo = e.target.innerHTML; }
-  toggleCollapse(e: Event, n: Note) { e.stopPropagation(); n.isCollapsed = !n.isCollapsed; }
+  
+  deleteNote(n: Note, i: number) {
+    if(!n.id) { this.closeNote(i); return; }
+    if(confirm('Excluir?')) this.noteService.deleteNote(n.id).subscribe(() => { this.closeNote(i); this.loadNotes(); });
+  }
+
+  toggleCollapse(event: Event, note: Note): void {
+    event.stopPropagation();
+    note.isCollapsed = !note.isCollapsed;
+  }
 }
