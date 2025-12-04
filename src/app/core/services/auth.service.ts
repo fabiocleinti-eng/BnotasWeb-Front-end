@@ -30,6 +30,11 @@ export class AuthService {
     return this.http.post(`${API_URL}/usuarios`, credentials);
   }
 
+  // --- NOVO MÉTODO ---
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${API_URL}/forgot-password`, { email });
+  }
+
   private saveToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
   }

@@ -1,36 +1,32 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth-guard'; // 1. Importa o Guarda
-import { Layout } from './core/layout/layout/layout'; // 2. Importa o Layout
+import { authGuard } from './core/guards/auth-guard';
+import { LayoutComponent } from './core/layout/layout/layout';
 
 export const routes: Routes = [
   {
     path: 'login',
-    // 3. Carrega o LoginComponent (que vamos consertar a seguir)
     loadComponent: () => import('./features/login/login.component')
       .then(m => m.LoginComponent)
   },
+  // --- NOVA ROTA AQUI ---
   {
-    path: '', // Rota principal (ex: http://localhost:4200/)
-    component: Layout, // 4. Carrega a "casca"
-    canActivate: [authGuard], // 5. PROTEGE esta rota e suas filhas
+    path: 'reset-password',
+    loadComponent: () => import('./features/reset-password/reset-password.component')
+      .then(m => m.ResetPasswordComponent)
+  },
+  // ---------------------
+  {
+    path: '',
+    component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
-      {
-        path: '', // Rota filha padrão
-        redirectTo: 'dashboard', // Redireciona para o dashboard
-        pathMatch: 'full'
-      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'dashboard',
-        // 6. Carrega o DashboardComponent (que vamos consertar a seguir)
         loadComponent: () => import('./features/dashboard/dashboard')
           .then(m => m.DashboardComponent)
       }
-      // Aqui poderíamos adicionar a rota de "Editar Anotação" no futuro
     ]
   },
-  // Rota "catch-all" para redirecionar para o login se a URL não existir
-  {
-    path: '**',
-    redirectTo: 'login'
-  }
+  { path: '**', redirectTo: 'login' }
 ];

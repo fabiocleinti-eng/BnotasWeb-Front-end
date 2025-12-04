@@ -15,7 +15,9 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   registerForm!: FormGroup;
   errorMessage: string | null = null;
+  
   isLoginMode = true;
+  isRecoverMode = false; // --- NOVO ESTADO
 
   constructor(
     private fb: FormBuilder,
@@ -35,40 +37,56 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  // --- ALTERNAR PARA MODO RECUPERAÇÃO ---
+  toggleRecover(): void {
+    this.isRecoverMode = !this.isRecoverMode;
+    this.errorMessage = null;
+  }
+
   onLoginSubmit(): void {
     if (this.loginForm.invalid) return;
     this.errorMessage = null;
-    const credentials = this.loginForm.value;
-
-    this.authService.login(credentials).subscribe({
-      next: () => {
-        this.router.navigate(['/']);
-      },
-      error: (err: any) => { // <--- CORREÇÃO AQUI
-        this.errorMessage = err.error?.error?.message || 'Erro ao tentar logar.';
-      }
+    
+    this.authService.login(this.loginForm.value).subscribe({
+      next: () => this.router.navigate(['/']),
+      error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao logar.'
     });
   }
 
   onRegisterSubmit(): void {
     if (this.registerForm.invalid) return;
     this.errorMessage = null;
-    const credentials = this.registerForm.value;
 
-    this.authService.register(credentials).subscribe({
+    this.authService.register(this.registerForm.value).subscribe({
       next: () => {
-        alert('Cadastro realizado com sucesso! Faça o login.');
+        alert('Cadastro realizado! Faça login.');
         this.isLoginMode = true;
         this.registerForm.reset();
       },
-      error: (err: any) => { // <--- CORREÇÃO AQUI
-        this.errorMessage = err.error?.error?.message || 'Erro ao tentar cadastrar.';
-      }
+      error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao cadastrar.'
+    });
+  }
+
+  // --- ENVIAR EMAIL DE RECUPERAÇÃO ---
+  onRecoverSubmit(): void {
+    const email = this.loginForm.get('email')?.value;
+    if (!email) {
+      this.errorMessage = 'Por favor, digite seu email no campo acima.';
+      return;
+    }
+
+    this.authService.forgotPassword(email).subscribe({
+      next: () => {
+        alert('Link de recuperação enviado para o seu e-mail!');
+        this.toggleRecover(); // Volta para o login
+      },
+      error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao enviar e-mail.'
     });
   }
 
   toggleMode(): void {
     this.isLoginMode = !this.isLoginMode;
     this.errorMessage = null;
+    this.isRecoverMode = false;
   }
 }
