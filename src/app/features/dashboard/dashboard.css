@@ -4,70 +4,79 @@
 @keyframes fadeInOut { 0% { opacity: 0; top: 0px; } 10% { opacity: 1; top: 20px; } 90% { opacity: 1; top: 20px; } 100% { opacity: 0; top: 0px; } }
 
 /* SIDEBAR */
-.sidebar { width: 300px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; padding: 20px; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+.sidebar { width: 280px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; padding: 20px; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
 .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.header-title-row { display: flex; align-items: center; gap: 8px; }
+.sidebar-header h3 { margin: 0; font-size: 1.1rem; color: #333; }
+.fav-badge { background-color: #fff8e1; color: #f57f17; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px; border: 1px solid #ffb74d; display: flex; align-items: center; gap: 3px; cursor: help; }
 .btn-new-sidebar { background: #007bff; color: white; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
 .search-box input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 20px; margin-bottom: 15px; box-sizing: border-box; background-color: #f9f9f9; }
 .notes-list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
 
-/* --- GRUPOS DE CORES --- */
+/* GRUPOS */
 .color-group { margin-bottom: 10px; }
-.group-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 10px; cursor: pointer; background-color: #f8f9fa;
-  border-radius: 8px; margin-bottom: 5px; border-left: 4px solid transparent;
-  transition: background 0.2s;
-}
+.group-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; cursor: pointer; background-color: #f8f9fa; border-radius: 8px; margin-bottom: 5px; border-left: 4px solid transparent; transition: background 0.2s; }
 .group-header:hover { background-color: #eee; }
-
-.group-label { display: flex; align-items: center; gap: 8px; }
+.group-label { display: flex; align-items: center; gap: 10px; }
 .color-badge { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
 .count { font-size: 0.85rem; color: #555; font-weight: 600; }
 .arrow { font-size: 0.8rem; color: #999; }
-
-/* NOVO: BADGE DE FAVORITOS NA ABA */
-.group-fav-badge {
-  font-size: 0.75rem; color: #f57f17; background-color: #fff3e0;
-  padding: 1px 6px; border-radius: 8px; border: 1px solid #ffe0b2;
-  font-weight: bold;
-}
-
+.group-fav-badge { font-size: 0.75rem; color: #f57f17; background-color: #fff3e0; padding: 1px 6px; border-radius: 8px; border: 1px solid #ffe0b2; font-weight: bold; }
 .group-notes { padding-left: 10px; border-left: 2px solid #f0f0f0; margin-left: 10px; margin-top: 5px; }
 
 /* MINI POST-IT */
-.mini-postit {
-  padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  cursor: pointer; border: 1px solid rgba(0,0,0,0.08); position: relative; overflow: hidden;
-  border-radius: 12px; transition: transform 0.2s;
-}
+.mini-postit { padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border: 1px solid rgba(0,0,0,0.08); position: relative; overflow: hidden; border-radius: 12px; transition: transform 0.2s; }
 .mini-postit:hover { transform: translateX(3px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 .mini-postit.minimized { padding-bottom: 10px; }
-
-/* Header do Item */
 .mini-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.95rem; color: #444; }
 .mini-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 5px; }
 .header-icons { display: flex; align-items: center; gap: 5px; }
 .mini-star { color: #ff9800; font-size: 0.9rem; }
-
-/* Botões Sidebar */
-.btn-delete-header {
-  background: transparent; border: none; cursor: pointer; font-size: 0.9rem; color: #aaa; padding: 2px;
-  opacity: 0; transition: all 0.2s;
-}
+.btn-delete-header { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; color: #aaa; padding: 2px; opacity: 0; transition: all 0.2s; }
 .mini-postit:hover .btn-delete-header { opacity: 1; }
 .btn-delete-header:hover { color: #e74c3c; transform: scale(1.2); }
-
 .btn-collapse { background: transparent; border: none; cursor: pointer; font-size: 0.8rem; color: #777; padding: 2px; }
 .btn-collapse:hover { color: #333; background-color: rgba(0,0,0,0.05); border-radius: 4px; }
-
 .mini-body { margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px; }
 .mini-content { font-size: 0.85rem; color: #555; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-date { font-size: 0.7rem; color: #888; margin-top: 6px; text-align: right; font-style: italic; }
 .empty-list-msg { text-align: center; color: #999; margin-top: 20px; font-size: 0.9rem; }
 
-/* WORKSPACE & CARDS (IGUAIS) */
-.workspace { flex: 1; padding: 30px; overflow-y: auto; background-color: #ffffff; } 
-.empty-workspace { text-align: center; margin-top: 100px; color: #888; }
+/* --- WORKSPACE HUB --- */
+.workspace { flex: 1; padding: 30px; overflow-y: auto; background-color: #ffffff; position: relative; } 
+.hub-container {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; max-width: 800px; margin: 0 auto;
+}
+.hub-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20rem; opacity: 0.03; pointer-events: none; user-select: none; }
+.hub-content { z-index: 1; width: 100%; text-align: center; }
+
+.hub-header h1 { font-size: 2.5rem; color: #333; margin-bottom: 5px; }
+.hub-date { color: #666; font-size: 1.1rem; margin-bottom: 10px; text-transform: capitalize; }
+.hub-stats-row { color: #888; margin-bottom: 40px; font-size: 0.9rem; }
+.dot { margin: 0 10px; color: #ccc; }
+
+/* AÇÃO PRINCIPAL */
+.hub-main-action { margin-bottom: 40px; }
+.btn-big-create {
+  background-color: #007bff; color: white; border: none; padding: 15px 40px;
+  border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); transition: transform 0.2s, background 0.2s;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.btn-big-create:hover { background-color: #0069d9; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4); }
+.plus-icon { font-size: 1.5rem; line-height: 1; }
+
+/* Scratchpad */
+.scratchpad-wrapper {
+  background: #fff9c4; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: left; transform: rotate(-1deg); width: 80%; margin: 0 auto; transition: transform 0.2s;
+}
+.scratchpad-wrapper:focus-within { transform: rotate(0deg) scale(1.02); }
+.scratchpad-header { font-weight: bold; font-size: 0.9rem; color: #d4a017; margin-bottom: 10px; border-bottom: 1px dashed #d4a017; padding-bottom: 5px; }
+.scratch-input { width: 100%; border: none; background: transparent; resize: none; outline: none; font-family: 'Courier New', monospace; font-size: 1rem; color: #333; min-height: 100px; }
+
+/* CARDS ABERTOS */
 .notes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; align-items: start; }
 .postit-card { box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; padding: 20px; min-height: 350px; border: 1px solid #eee; transition: background-color 0.3s; border-radius: 15px; }
 .postit-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px; align-items: center; }

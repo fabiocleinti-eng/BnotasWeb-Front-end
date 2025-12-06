@@ -4,7 +4,10 @@
 
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h3>Minhas Notas</h3>
+      <div class="header-title-row">
+        <h3>Minhas Notas</h3>
+        <span class="fav-badge" *ngIf="favCount > 0" title="Total de Favoritas">★ {{ favCount }}</span>
+      </div>
       <button class="btn-new-sidebar" (click)="createNote()">+ Nova</button>
     </div>
 
@@ -13,65 +16,80 @@
     </div>
 
     <div class="notes-list-container">
-      
       <div class="color-group" *ngFor="let group of noteGroups">
-        
         <div class="group-header" (click)="toggleGroup(group)" [style.borderLeftColor]="group.color">
           <div class="group-label">
             <div class="color-badge" [style.backgroundColor]="group.color"></div>
             <span class="count">{{ group.notes.length }} notas</span>
-            
-            <span class="group-fav-badge" *ngIf="group.favCount > 0" title="Favoritas neste grupo">
-              ★ {{ group.favCount }}
-            </span>
+            <span class="group-fav-badge" *ngIf="group.favCount > 0">★ {{ group.favCount }}</span>
           </div>
           <span class="arrow">{{ group.isOpen ? '▼' : '▶' }}</span>
         </div>
 
         <div class="group-notes" *ngIf="group.isOpen">
-          <div 
-            class="mini-postit" 
-            *ngFor="let note of group.notes" 
-            (click)="openNote(note)"
-            [style.backgroundColor]="group.color"
-            [class.minimized]="note.isCollapsed"
-          >
+          <div class="mini-postit" *ngFor="let note of group.notes" (click)="openNote(note)" [style.backgroundColor]="group.color" [class.minimized]="note.isCollapsed">
             <div class="mini-header">
               <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
-              
               <div class="header-icons">
                 <span *ngIf="note.favorita" class="mini-star">★</span>
-                
                 <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
-                
-                <button class="btn-collapse" (click)="toggleCollapse($event, note)">
-                  {{ note.isCollapsed ? '▼' : '▲' }}
-                </button>
+                <button class="btn-collapse" (click)="toggleCollapse($event, note)">{{ note.isCollapsed ? '▼' : '▲' }}</button>
               </div>
             </div>
-
             <div class="mini-body" *ngIf="!note.isCollapsed">
               <div class="mini-content" [innerHTML]="note.conteudo | slice:0:40"></div>
               <div class="mini-date" *ngIf="note.dataCriacao">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</div>
             </div>
           </div>
         </div>
-
       </div>
       
       <div *ngIf="noteGroups.length === 0" class="empty-list-msg">
         Nenhuma nota encontrada.
       </div>
-
     </div>
   </aside>
 
   <main class="workspace">
-    <div *ngIf="openNotes.length === 0" class="empty-workspace">
-      <h2>Área de Trabalho</h2>
-      <p>Clique em "+ Nova" ou selecione uma nota para editar.</p>
+    
+    <div *ngIf="openNotes.length === 0" class="hub-container">
+      <div class="hub-watermark">📝</div>
+      <div class="hub-content">
+        
+        <header class="hub-header">
+          <h1>Olá, {{ userName }}! 👋</h1>
+          <p class="hub-date">{{ today | date:"EEEE, d 'de' MMMM" }}</p>
+          
+          <div class="hub-stats-row">
+            <span>Você tem <b>{{ totalNotes }}</b> notas criadas</span>
+            <span class="dot">•</span>
+            <span><b>{{ favCount }}</b> favoritas</span>
+          </div>
+        </header>
+
+        <div class="hub-main-action">
+          <button class="btn-big-create" (click)="createNote()">
+            <span class="plus-icon">+</span>
+            <span>Criar Nova Nota</span>
+          </button>
+        </div>
+
+        <div class="scratchpad-wrapper">
+          <div class="scratchpad-header">
+            <span>🚀 Rascunho Rápido </span>
+          </div>
+          <textarea 
+            [(ngModel)]="scratchpadContent" 
+            (input)="onScratchpadChange()"
+            placeholder="Anote aqui algo rápido..."
+            class="scratch-input"
+          ></textarea>
+        </div>
+
+      </div>
     </div>
-    <div class="notes-grid">
+
+    <div class="notes-grid" *ngIf="openNotes.length > 0">
       <div class="postit-card" *ngFor="let note of openNotes; let i = index" [style.backgroundColor]="note.cor">
         <div class="postit-header">
           <input type="text" [(ngModel)]="note.titulo" placeholder="Título" class="postit-title-input">

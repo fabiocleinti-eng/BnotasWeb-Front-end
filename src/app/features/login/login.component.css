@@ -1,36 +1,49 @@
 .login-page { display: flex; height: 100vh; width: 100vw; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-
-/* ESQUERDA */
 .login-left { flex: 1; background: linear-gradient(135deg, #00b4db, #0083b0); display: flex; justify-content: center; align-items: center; color: white; position: relative; }
-.login-left::after { content: ''; position: absolute; top: 0; right: -50px; width: 100px; height: 100%; background: inherit; z-index: -1; border-radius: 0 50% 50% 0; }
-
 .login-content { width: 100%; max-width: 320px; text-align: center; padding: 20px; z-index: 10; }
-
 h2 { font-size: 2rem; letter-spacing: 2px; margin-bottom: 30px; font-weight: 600; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
 .input-group { margin-bottom: 15px; text-align: left; }
 .rounded-input { width: 100%; padding: 15px 25px; border-radius: 30px; border: none; background: white; font-size: 1rem; color: #333; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; transition: transform 0.2s; }
 .rounded-input:focus { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-
-/* Mensagem de erro do input */
 .error-msg { color: #ffcccc; font-size: 0.8rem; margin-top: 5px; padding-left: 15px; font-weight: 500; }
 
-.options { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 30px; padding: 0 15px; opacity: 0.9; }
+/* --- CAIXINHA DE REQUISITOS DE SENHA (NOVO) --- */
+.password-requirements {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 15px;
+  text-align: left;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.req-title { display: flex; align-items: center; gap: 5px; font-weight: bold; margin-bottom: 5px; color: #eee; }
+.info-icon { 
+  background: #fff; color: #0083b0; width: 16px; height: 16px; border-radius: 50%; 
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; 
+}
+.password-requirements ul { list-style: none; padding: 0; margin: 0; }
+.password-requirements li { padding-left: 20px; position: relative; color: #ffcccc; margin-bottom: 2px; transition: color 0.3s; }
+/* Ícone de X padrão */
+.password-requirements li::before { content: '✕'; position: absolute; left: 0; color: #ff5252; }
+/* Quando válido fica verde */
+.password-requirements li.valid { color: #ccffcc; }
+.password-requirements li.valid::before { content: '✓'; color: #69f0ae; }
+/* ---------------------------------------------- */
+
+.options { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 30px; padding: 0 15px; opacity: 0.9; }
 .remember-me { cursor: pointer; }
 .forgot-pass { cursor: pointer; text-decoration: underline; }
-
 .btn-submit { width: 100%; padding: 15px; border-radius: 30px; border: none; background-color: #00d2a0; color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 160, 0.4); transition: transform 0.2s; letter-spacing: 1px; margin-top: 10px; }
 .btn-submit:hover { transform: scale(1.05); background-color: #00c495; }
 .btn-submit:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
-
 .switch-mode { margin-top: 25px; font-size: 0.9rem; cursor: pointer; opacity: 0.8; transition: opacity 0.2s; }
 .switch-mode:hover { opacity: 1; text-decoration: underline; }
-
-/* DIREITA */
-.login-right { flex: 1.2; background-color: white; display: flex; justify-content: center; align-items: center; }
-.decoration-circle { width: 350px; height: 550px; background: #e0f7fa; border-radius: 30px; display: flex; justify-content: center; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 4px solid #0083b0; }
+.recover-text { margin-bottom: 20px; font-size: 0.9rem; opacity: 0.9; }
+.back-link { display: block; margin-top: 20px; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
+.login-right { flex: 1.5; background-color: white; display: flex; justify-content: center; align-items: center; }
+.decoration-circle { width: 300px; height: 550px; background: #e0f7fa; border-radius: 40px; display: flex; justify-content: center; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 4px solid #0083b0; }
 .inner-circle { font-size: 5rem; background: white; width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #0083b0; }
-
-.error-toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #ff5252; color: white; padding: 12px 24px; border-radius: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-weight: bold; animation: slideUp 0.3s ease; }
-@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-@media (max-width: 800px) { .login-page { flex-direction: column; } .login-right { display: none; } .login-left::after { display: none; } }
+.error-toast { position: absolute; bottom: 30px; left: 20px; background: #ff5252; color: white; padding: 12px 24px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-weight: bold; z-index: 100; }
+@media (max-width: 850px) { .login-page { flex-direction: column; } .login-right { display: none; } }

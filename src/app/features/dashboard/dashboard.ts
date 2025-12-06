@@ -2,14 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../core/services/note.service';
+import { AuthService } from '../../core/services/auth.service'; // Importado AuthService
 import { Note } from '../../core/models/note.model';
 
-// Interface restaurada com o contador de favoritos
 interface NoteGroup {
   color: string;
   notes: Note[];
   isOpen: boolean;
-  favCount: number; // <--- NOVO: Contagem de favoritos do grupo
+  favCount: number;
 }
 
 @Component({
@@ -21,22 +21,64 @@ interface NoteGroup {
 })
 export class DashboardComponent implements OnInit {
   notes: Note[] = [];
-  noteGroups: NoteGroup[] = []; // Voltamos a usar Grupos
+  noteGroups: NoteGroup[] = []; 
   openNotes: Note[] = []; 
   searchTerm: string = '';
+
   showToast: boolean = false;
   toastMessage: string = '';
   
+  today: Date = new Date();
+  userName: string = 'Usuário'; // Padrão
+  scratchpadContent: string = '';
+
   availableColors: string[] = [
     '#fff9c4', '#ffcdd2', '#f8bbd0', '#e1bee7', 
     '#d1c4e9', '#c5cae9', '#bbdefb', '#b3e5fc', 
     '#b2dfdb', '#c8e6c9', '#f0f4c3', '#ffe0b2', '#f5f5f5'
   ];
 
-  constructor(private noteService: NoteService) {}
+  constructor(
+    private noteService: NoteService,
+    private authService: AuthService // Injetado aqui
+  ) {}
 
   ngOnInit(): void {
     this.loadNotes();
+    this.loadScratchpad();
+    this.loadUserName(); // Carrega o nome
+  }
+
+  // --- LÓGICA PARA EXIBIR O NOME REAL ---
+  loadUserName(): void {
+    const user = this.authService.getUser();
+    
+    // Tenta pegar o 'nome' se existir
+    if (user && (user as any).nome) {
+      this.userName = (user as any).nome;
+    } 
+    // Se não tiver nome (usuário antigo), pega do email
+    else if (user && user.email) {
+      const namePart = user.email.split('@')[0];
+      this.userName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    }
+  }
+
+  get favCount(): number {
+    return this.notes.filter(n => n.favorita).length;
+  }
+  
+  get totalNotes(): number {
+    return this.notes.length;
+  }
+
+  loadScratchpad(): void {
+    const saved = localStorage.getItem('bnotas_scratchpad');
+    if (saved) this.scratchpadContent = saved;
+  }
+
+  onScratchpadChange(): void {
+    localStorage.setItem('bnotas_scratchpad', this.scratchpadContent);
   }
 
   displayToast(message: string): void {
@@ -53,7 +95,7 @@ export class DashboardComponent implements OnInit {
           cor: n.cor || '#fff9c4',
           isCollapsed: false 
         }));
-        this.organizeGroups(); // Agrupa por cor
+        this.organizeGroups();
       },
       error: (err) => console.error('Erro', err)
     });
@@ -64,7 +106,6 @@ export class DashboardComponent implements OnInit {
     this.organizeGroups();
   }
 
-  // LÓGICA DE AGRUPAMENTO RESTAURADA
   organizeGroups(): void {
     let filtered = this.notes;
 
@@ -88,15 +129,13 @@ export class DashboardComponent implements OnInit {
     this.noteGroups = Object.keys(groupsMap).map(color => {
       const existingGroup = this.noteGroups.find(g => g.color === color);
       const notesInGroup = groupsMap[color];
-      
-      // Calcula favoritos neste grupo
       const favorites = notesInGroup.filter(n => n.favorita).length;
 
       return {
         color: color,
         notes: notesInGroup,
         isOpen: existingGroup ? existingGroup.isOpen : true,
-        favCount: favorites // <--- Armazena a contagem
+        favCount: favorites
       };
     });
 
@@ -136,7 +175,7 @@ export class DashboardComponent implements OnInit {
       const sidebarNote = this.notes.find(n => n.id === note.id);
       if (sidebarNote) sidebarNote.cor = color;
     }
-    this.organizeGroups(); // Reagrupa imediatamente para mudar de pasta
+    this.organizeGroups(); 
   }
 
   deleteFromSidebar(event: Event, note: Note): void {
@@ -169,7 +208,7 @@ export class DashboardComponent implements OnInit {
         
         this.notes.unshift(note);
         this.organizeGroups();
-        this.displayToast('Nota criada!');
+        this.displayToast('Criado!');
       });
     }
   }

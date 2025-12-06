@@ -1,62 +1,74 @@
 <div class="login-page">
-  
   <div class="login-left">
     <div class="login-content">
+      <h2>{{ isRecoverMode ? 'RECUPERAR' : (isLoginMode ? 'BEM-VINDO' : 'CRIAR CONTA') }}</h2>
       
-      <h2 *ngIf="!isRecoverMode">{{ isLoginMode ? 'BEM-VINDO' : 'CRIAR CONTA' }}</h2>
-      <h2 *ngIf="isRecoverMode">RECUPERAR SENHA</h2>
-      
-      <div *ngIf="isRecoverMode">
-        <p style="margin-bottom: 20px; opacity: 0.9;">Digite seu e-mail para receber o link de redefinição.</p>
-        <form [formGroup]="loginForm" (ngSubmit)="onRecoverSubmit()">
-          <div class="input-group">
-            <input type="email" formControlName="email" placeholder="Seu Email Cadastrado" class="rounded-input">
-          </div>
-          <button type="submit" class="btn-submit">ENVIAR LINK</button>
-          <p class="switch-mode" (click)="toggleRecover()">Voltar para o Login</p>
-        </form>
-      </div>
+      <form *ngIf="isLoginMode && !isRecoverMode" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
+        <div class="input-group">
+          <input type="email" formControlName="email" placeholder="Email" class="rounded-input">
+        </div>
+        <div class="input-group">
+          <input type="password" formControlName="senha" placeholder="Senha" class="rounded-input">
+        </div>
+        <div class="options">
+          <label class="remember-me"><input type="checkbox" formControlName="rememberMe"> Lembrar-me</label>
+          <a class="forgot-pass" (click)="toggleRecover()">Esqueceu a senha?</a>
+        </div>
+        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid">ENTRAR</button>
+      </form>
 
-      <div *ngIf="!isRecoverMode">
-        <form *ngIf="isLoginMode" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
-          <div class="input-group">
-            <input type="email" formControlName="email" placeholder="Email" class="rounded-input">
-            <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-msg">Email inválido</div>
-          </div>
-          <div class="input-group">
-            <input type="password" formControlName="senha" placeholder="Senha" class="rounded-input">
-          </div>
-          <div class="options">
-            <label class="remember-me"><input type="checkbox"> Lembrar-me</label>
-            <a class="forgot-pass" (click)="toggleRecover()">Esqueceu a senha?</a>
-          </div>
-          <button type="submit" class="btn-submit" [disabled]="loginForm.invalid">ENTRAR</button>
-        </form>
+      <form *ngIf="!isLoginMode && !isRecoverMode" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
+        <div class="input-group">
+          <input type="text" formControlName="nome" placeholder="Nome" class="rounded-input">
+        </div>
+        <div class="input-group">
+          <input type="text" formControlName="sobrenome" placeholder="Sobrenome" class="rounded-input">
+        </div>
+        <div class="input-group">
+          <input type="email" formControlName="email" placeholder="Seu Email" class="rounded-input">
+        </div>
+        
+        <div class="input-group">
+          <input type="password" formControlName="senha" placeholder="Crie uma Senha" class="rounded-input">
+        </div>
 
-        <form *ngIf="!isLoginMode" [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
-          <div class="input-group">
-            <input type="email" formControlName="email" placeholder="Seu melhor Email" class="rounded-input">
+        <div class="password-requirements" *ngIf="registerForm.get('senha')?.dirty">
+          <div class="req-title">
+            <span class="info-icon">!</span> Sua senha deve ter:
           </div>
-          <div class="input-group">
-            <input type="password" formControlName="senha" placeholder="Crie uma Senha" class="rounded-input">
-            <div *ngIf="registerForm.get('senha')?.invalid && registerForm.get('senha')?.touched" class="error-msg">Mínimo 6 caracteres</div>
+          <ul>
+            <li [class.valid]="passwordCriteria.minLength">Min. 8 caracteres</li>
+            <li [class.valid]="passwordCriteria.hasUpperCase">1 Letra Maiúscula</li>
+            <li [class.valid]="passwordCriteria.hasSpecialChar">1 Caracter Especial (@#$%)</li>
+          </ul>
+        </div>
+
+        <div class="input-group">
+          <input type="password" formControlName="confirmSenha" placeholder="Confirme a Senha" class="rounded-input">
+          <div *ngIf="registerForm.hasError('mismatch') && registerForm.get('confirmSenha')?.touched" class="error-msg">
+            As senhas não coincidem.
           </div>
-          <button type="submit" class="btn-submit" [disabled]="registerForm.invalid">CADASTRAR</button>
-        </form>
+        </div>
 
-        <p class="switch-mode" (click)="toggleMode()">
-          {{ isLoginMode ? "Não tem conta? Cadastre-se" : "Já tem conta? Faça Login" }}
-        </p>
-      </div>
+        <button type="submit" class="btn-submit" [disabled]="registerForm.invalid || !isPasswordStrong">CADASTRAR</button>
+      </form>
 
+      <form *ngIf="isRecoverMode" [formGroup]="loginForm" (ngSubmit)="onRecoverSubmit()">
+        <p class="recover-text">Digite seu e-mail para receber o link.</p>
+        <div class="input-group">
+          <input type="email" formControlName="email" placeholder="Seu Email" class="rounded-input">
+        </div>
+        <button type="submit" class="btn-submit">ENVIAR LINK</button>
+        <a class="back-link" (click)="toggleRecover()">Voltar</a>
+      </form>
+
+      <p class="switch-mode" *ngIf="!isRecoverMode" (click)="toggleMode()">
+        {{ isLoginMode ? "Não tem conta? Cadastre-se" : "Já tem conta? Faça Login" }}
+      </p>
     </div>
   </div>
-
   <div class="login-right">
-    <div class="decoration-circle">
-      <div class="inner-circle">👤</div>
-    </div>
+    <div class="decoration-circle"><div class="inner-circle">👤</div></div>
   </div>
-
   <div *ngIf="errorMessage" class="error-toast">{{ errorMessage }}</div>
 </div>

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
@@ -17,7 +17,14 @@ export class LoginComponent implements OnInit {
   errorMessage: string | null = null;
   
   isLoginMode = true;
-  isRecoverMode = false; // --- NOVO ESTADO
+  isRecoverMode = false;
+
+  // Controle visual da força da senha
+  passwordCriteria = {
+    minLength: false,
+    hasUpperCase: false,
+    hasSpecialChar: false
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -28,16 +35,53 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      senha: ['', [Validators.required, Validators.minLength(1)]]
+      senha: ['', [Validators.required, Validators.minLength(1)]],
+      rememberMe: [false]
     });
 
+    // FORMULÁRIO DE CADASTRO ATUALIZADO
     this.registerForm = this.fb.group({
+      nome: ['', Validators.required],
+      sobrenome: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      senha: ['', [Validators.required, Validators.minLength(6)]]
+      senha: ['', [Validators.required, Validators.minLength(8)]], // Mínimo 8 agora
+      confirmSenha: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator }); // Validador de grupo
+
+    // Monitora mudanças na senha para atualizar a caixinha de dicas em tempo real
+    this.registerForm.get('senha')?.valueChanges.subscribe(value => {
+      this.updatePasswordStrength(value);
     });
+
+    const savedEmail = localStorage.getItem('bnotas_saved_email');
+    if (savedEmail) {
+      this.loginForm.patchValue({ email: savedEmail, rememberMe: true });
+    }
   }
 
-  // --- ALTERNAR PARA MODO RECUPERAÇÃO ---
+  // Validador para conferir se as senhas são iguais
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const senha = control.get('senha')?.value;
+    const confirmSenha = control.get('confirmSenha')?.value;
+    return senha === confirmSenha ? null : { mismatch: true };
+  }
+
+  // Verifica os requisitos da senha
+  updatePasswordStrength(password: string): void {
+    this.passwordCriteria = {
+      minLength: password?.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+  }
+
+  // Verifica se a senha é forte o suficiente para habilitar o botão
+  get isPasswordStrong(): boolean {
+    return this.passwordCriteria.minLength && 
+           this.passwordCriteria.hasUpperCase && 
+           this.passwordCriteria.hasSpecialChar;
+  }
+
   toggleRecover(): void {
     this.isRecoverMode = !this.isRecoverMode;
     this.errorMessage = null;
@@ -45,19 +89,23 @@ export class LoginComponent implements OnInit {
 
   onLoginSubmit(): void {
     if (this.loginForm.invalid) return;
-    this.errorMessage = null;
+    const { email, senha, rememberMe } = this.loginForm.value;
+    if (rememberMe) localStorage.setItem('bnotas_saved_email', email);
+    else localStorage.removeItem('bnotas_saved_email');
     
-    this.authService.login(this.loginForm.value).subscribe({
+    this.authService.login({ email, senha }).subscribe({
       next: () => this.router.navigate(['/']),
       error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao logar.'
     });
   }
 
   onRegisterSubmit(): void {
-    if (this.registerForm.invalid) return;
-    this.errorMessage = null;
+    if (this.registerForm.invalid || !this.isPasswordStrong) return;
 
-    this.authService.register(this.registerForm.value).subscribe({
+    // Remove o campo confirmSenha antes de enviar
+    const { confirmSenha, ...userData } = this.registerForm.value;
+
+    this.authService.register(userData).subscribe({
       next: () => {
         alert('Cadastro realizado! Faça login.');
         this.isLoginMode = true;
@@ -67,20 +115,12 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  // --- ENVIAR EMAIL DE RECUPERAÇÃO ---
   onRecoverSubmit(): void {
     const email = this.loginForm.get('email')?.value;
-    if (!email) {
-      this.errorMessage = 'Por favor, digite seu email no campo acima.';
-      return;
-    }
-
+    if (!email) { this.errorMessage = 'Digite seu email.'; return; }
     this.authService.forgotPassword(email).subscribe({
-      next: () => {
-        alert('Link de recuperação enviado para o seu e-mail!');
-        this.toggleRecover(); // Volta para o login
-      },
-      error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao enviar e-mail.'
+      next: () => { alert('Link enviado!'); this.toggleRecover(); },
+      error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao enviar.'
     });
   }
 

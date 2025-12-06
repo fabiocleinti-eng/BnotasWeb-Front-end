@@ -15,6 +15,7 @@ interface LoginResponse {
 })
 export class AuthService {
   private readonly TOKEN_KEY = 'bnotas_token';
+  private readonly USER_KEY = 'bnotas_user'; // Chave para salvar o usuário
 
   constructor(private http: HttpClient, private router: Router) { }
 
@@ -22,6 +23,8 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${API_URL}/login`, credentials).pipe(
       tap(response => {
         this.saveToken(response.token);
+        // SALVA OS DADOS DO USUÁRIO
+        localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
       })
     );
   }
@@ -30,7 +33,6 @@ export class AuthService {
     return this.http.post(`${API_URL}/usuarios`, credentials);
   }
 
-  // --- NOVO MÉTODO ---
   forgotPassword(email: string): Observable<any> {
     return this.http.post(`${API_URL}/forgot-password`, { email });
   }
@@ -43,12 +45,19 @@ export class AuthService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  // NOVO: Recupera o usuário salvo
+  getUser(): { id: number, email: string } | null {
+    const userStr = localStorage.getItem(this.USER_KEY);
+    return userStr ? JSON.parse(userStr) : null;
+  }
+
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY); // Limpa o usuário ao sair
     this.router.navigate(['/login']);
   }
 }
