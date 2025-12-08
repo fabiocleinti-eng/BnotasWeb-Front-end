@@ -32,6 +32,7 @@
               <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
               <div class="header-icons">
                 <span *ngIf="note.favorita" class="mini-star">★</span>
+                <span *ngIf="note.dataLembrete" class="mini-clock" title="Tem lembrete">⏰</span>
                 <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
                 <button class="btn-collapse" (click)="toggleCollapse($event, note)">{{ note.isCollapsed ? '▼' : '▲' }}</button>
               </div>
@@ -55,28 +56,24 @@
     <div *ngIf="openNotes.length === 0" class="hub-container">
       <div class="hub-watermark">📝</div>
       <div class="hub-content">
-        
         <header class="hub-header">
           <h1>Olá, {{ userName }}! 👋</h1>
           <p class="hub-date">{{ today | date:"EEEE, d 'de' MMMM" }}</p>
-          
           <div class="hub-stats-row">
             <span>Você tem <b>{{ totalNotes }}</b> notas criadas</span>
             <span class="dot">•</span>
             <span><b>{{ favCount }}</b> favoritas</span>
           </div>
         </header>
-
         <div class="hub-main-action">
           <button class="btn-big-create" (click)="createNote()">
             <span class="plus-icon">+</span>
             <span>Criar Nova Nota</span>
           </button>
         </div>
-
         <div class="scratchpad-wrapper">
           <div class="scratchpad-header">
-            <span>🚀 Rascunho Rápido </span>
+            <span>🚀 Rascunho Rápido (Não salvo no banco)</span>
           </div>
           <textarea 
             [(ngModel)]="scratchpadContent" 
@@ -85,7 +82,6 @@
             class="scratch-input"
           ></textarea>
         </div>
-
       </div>
     </div>
 
@@ -106,7 +102,13 @@
           <div class="color-wrapper"><span style="background:yellow;">M</span><input type="color" (input)="formatText('hiliteColor', $any($event.target).value)"></div>
         </div>
         <div class="postit-content-editable" contenteditable="true" [innerHTML]="note.conteudo" (blur)="updateContent($event, note)"></div>
+        
         <div class="postit-footer-column">
+          <div class="reminder-section">
+            <span class="reminder-icon">⏰ Lembrete:</span>
+            <input type="datetime-local" [(ngModel)]="note.dataLembrete" class="reminder-input">
+          </div>
+
           <div class="colors-row">
              <div *ngFor="let color of availableColors" class="color-dot" [style.backgroundColor]="color" (click)="changeNoteColor(note, color)" [class.selected]="note.cor === color"></div>
           </div>

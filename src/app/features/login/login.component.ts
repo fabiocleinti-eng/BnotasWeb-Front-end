@@ -19,7 +19,6 @@ export class LoginComponent implements OnInit {
   isLoginMode = true;
   isRecoverMode = false;
 
-  // Controle visual da força da senha
   passwordCriteria = {
     minLength: false,
     hasUpperCase: false,
@@ -39,16 +38,16 @@ export class LoginComponent implements OnInit {
       rememberMe: [false]
     });
 
-    // FORMULÁRIO DE CADASTRO ATUALIZADO
+    // FORMULÁRIO DE CADASTRO COM TELEFONE
     this.registerForm = this.fb.group({
       nome: ['', Validators.required],
       sobrenome: ['', Validators.required],
+      telefone: [''], // <--- NOVO (Opcional, pode deixar vazio se quiser)
       email: ['', [Validators.required, Validators.email]],
-      senha: ['', [Validators.required, Validators.minLength(8)]], // Mínimo 8 agora
+      senha: ['', [Validators.required, Validators.minLength(8)]],
       confirmSenha: ['', Validators.required]
-    }, { validators: this.passwordMatchValidator }); // Validador de grupo
+    }, { validators: this.passwordMatchValidator });
 
-    // Monitora mudanças na senha para atualizar a caixinha de dicas em tempo real
     this.registerForm.get('senha')?.valueChanges.subscribe(value => {
       this.updatePasswordStrength(value);
     });
@@ -59,14 +58,12 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  // Validador para conferir se as senhas são iguais
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const senha = control.get('senha')?.value;
     const confirmSenha = control.get('confirmSenha')?.value;
     return senha === confirmSenha ? null : { mismatch: true };
   }
 
-  // Verifica os requisitos da senha
   updatePasswordStrength(password: string): void {
     this.passwordCriteria = {
       minLength: password?.length >= 8,
@@ -75,7 +72,6 @@ export class LoginComponent implements OnInit {
     };
   }
 
-  // Verifica se a senha é forte o suficiente para habilitar o botão
   get isPasswordStrong(): boolean {
     return this.passwordCriteria.minLength && 
            this.passwordCriteria.hasUpperCase && 
@@ -102,7 +98,7 @@ export class LoginComponent implements OnInit {
   onRegisterSubmit(): void {
     if (this.registerForm.invalid || !this.isPasswordStrong) return;
 
-    // Remove o campo confirmSenha antes de enviar
+    // Remove a confirmação de senha antes de enviar para o backend
     const { confirmSenha, ...userData } = this.registerForm.value;
 
     this.authService.register(userData).subscribe({

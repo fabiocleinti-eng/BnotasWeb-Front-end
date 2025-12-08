@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../core/services/note.service';
-import { AuthService } from '../../core/services/auth.service'; // Importado AuthService
+import { AuthService } from '../../core/services/auth.service';
 import { Note } from '../../core/models/note.model';
 
 interface NoteGroup {
@@ -29,7 +29,7 @@ export class DashboardComponent implements OnInit {
   toastMessage: string = '';
   
   today: Date = new Date();
-  userName: string = 'Usuário'; // Padrão
+  userName: string = 'Usuário';
   scratchpadContent: string = '';
 
   availableColors: string[] = [
@@ -40,37 +40,27 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private noteService: NoteService,
-    private authService: AuthService // Injetado aqui
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadNotes();
     this.loadScratchpad();
-    this.loadUserName(); // Carrega o nome
+    this.loadUserName();
   }
 
-  // --- LÓGICA PARA EXIBIR O NOME REAL ---
   loadUserName(): void {
     const user = this.authService.getUser();
-    
-    // Tenta pegar o 'nome' se existir
     if (user && (user as any).nome) {
       this.userName = (user as any).nome;
-    } 
-    // Se não tiver nome (usuário antigo), pega do email
-    else if (user && user.email) {
+    } else if (user && user.email) {
       const namePart = user.email.split('@')[0];
       this.userName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
     }
   }
 
-  get favCount(): number {
-    return this.notes.filter(n => n.favorita).length;
-  }
-  
-  get totalNotes(): number {
-    return this.notes.length;
-  }
+  get favCount(): number { return this.notes.filter(n => n.favorita).length; }
+  get totalNotes(): number { return this.notes.length; }
 
   loadScratchpad(): void {
     const saved = localStorage.getItem('bnotas_scratchpad');
@@ -108,7 +98,6 @@ export class DashboardComponent implements OnInit {
 
   organizeGroups(): void {
     let filtered = this.notes;
-
     if (this.searchTerm) {
       filtered = filtered.filter(n => 
         n.titulo.toLowerCase().includes(this.searchTerm) || 
@@ -117,12 +106,9 @@ export class DashboardComponent implements OnInit {
     }
 
     const groupsMap: { [key: string]: Note[] } = {};
-    
     filtered.forEach(note => {
       const color = note.cor || '#fff9c4';
-      if (!groupsMap[color]) {
-        groupsMap[color] = [];
-      }
+      if (!groupsMap[color]) groupsMap[color] = [];
       groupsMap[color].push(note);
     });
 
@@ -138,13 +124,10 @@ export class DashboardComponent implements OnInit {
         favCount: favorites
       };
     });
-
     this.noteGroups.sort((a, b) => a.color.localeCompare(b.color));
   }
 
-  toggleGroup(group: NoteGroup): void {
-    group.isOpen = !group.isOpen;
-  }
+  toggleGroup(group: NoteGroup): void { group.isOpen = !group.isOpen; }
 
   openNote(note: Note): void {
     const alreadyOpen = this.openNotes.find(n => n.id === note.id);
@@ -153,7 +136,22 @@ export class DashboardComponent implements OnInit {
       this.displayToast('Máximo de 4 notas abertas!');
       return;
     }
-    this.openNotes.push({ ...note, cor: note.cor || '#fff9c4' }); 
+    
+    // Formata a data para o input datetime-local (yyyy-MM-ddThh:mm)
+    let formattedDate = '';
+    if (note.dataLembrete) {
+      const d = new Date(note.dataLembrete);
+      // Ajuste simples para fuso local
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      formattedDate = d.toISOString().slice(0, 16);
+    }
+
+    // Abre a nota com a data formatada corretamente para o input
+    this.openNotes.push({ 
+      ...note, 
+      cor: note.cor || '#fff9c4',
+      dataLembrete: formattedDate 
+    }); 
   }
 
   createNote(): void {
@@ -165,9 +163,7 @@ export class DashboardComponent implements OnInit {
     this.openNotes.push(newNote);
   }
 
-  closeNote(index: number): void {
-    this.openNotes.splice(index, 1);
-  }
+  closeNote(index: number): void { this.openNotes.splice(index, 1); }
 
   changeNoteColor(note: Note, color: string): void {
     note.cor = color;
@@ -193,19 +189,25 @@ export class DashboardComponent implements OnInit {
 
   saveNote(note: Note): void {
     if (!note.titulo) { this.displayToast('Título obrigatório!'); return; }
-    const noteToSend = { ...note };
+    
+    // Prepara objeto para envio
+    const noteToSend = { 
+      ...note,
+      // Garante que se for vazio envie null
+      dataLembrete: note.dataLembrete || null 
+    };
 
     if (note.id) {
-      this.noteService.updateNote(note.id, noteToSend).subscribe(() => {
+      // "as any" força o TypeScript a aceitar o envio, resolvendo o erro vermelho
+      this.noteService.updateNote(note.id, noteToSend as any).subscribe(() => {
         this.loadNotes(); 
         this.displayToast('Nota salva!');
       });
     } else {
-      this.noteService.createNote(noteToSend).subscribe((created) => {
+      this.noteService.createNote(noteToSend as any).subscribe((created) => {
         note.id = created.id;
         note.dataCriacao = created.dataCriacao;
         note.cor = created.cor || note.cor;
-        
         this.notes.unshift(note);
         this.organizeGroups();
         this.displayToast('Criado!');

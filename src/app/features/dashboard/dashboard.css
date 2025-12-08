@@ -32,6 +32,7 @@
 .mini-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 5px; }
 .header-icons { display: flex; align-items: center; gap: 5px; }
 .mini-star { color: #ff9800; font-size: 0.9rem; }
+.mini-clock { font-size: 0.8rem; }
 .btn-delete-header { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; color: #aaa; padding: 2px; opacity: 0; transition: all 0.2s; }
 .mini-postit:hover .btn-delete-header { opacity: 1; }
 .btn-delete-header:hover { color: #e74c3c; transform: scale(1.2); }
@@ -93,6 +94,12 @@
 .postit-content-editable { flex: 1; background: transparent; border: none; outline: none; font-family: 'Segoe UI', sans-serif; font-size: 1rem; line-height: 1.5; color: #444; min-height: 200px; overflow-y: auto; white-space: pre-wrap; padding: 5px; }
 .postit-content-editable:focus { background: rgba(255,255,255,0.2); }
 .postit-footer-column { margin-top: auto; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+/* LEMBRETE */
+.reminder-section { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; }
+.reminder-icon { font-size: 0.85rem; font-weight: bold; color: #555; }
+.reminder-input { border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-size: 0.85rem; background: rgba(255,255,255,0.8); cursor: pointer; }
+
 .colors-row { display: flex; gap: 12px; overflow-x: auto; padding: 12px 10px; align-items: center; }
 .colors-row::-webkit-scrollbar { height: 6px; }
 .colors-row::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }

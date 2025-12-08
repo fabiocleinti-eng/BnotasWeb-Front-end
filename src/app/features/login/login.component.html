@@ -24,6 +24,11 @@
         <div class="input-group">
           <input type="text" formControlName="sobrenome" placeholder="Sobrenome" class="rounded-input">
         </div>
+        
+        <div class="input-group">
+          <input type="tel" formControlName="telefone" placeholder="Celular (DD) 99999-9999" class="rounded-input">
+        </div>
+
         <div class="input-group">
           <input type="email" formControlName="email" placeholder="Seu Email" class="rounded-input">
         </div>
@@ -33,9 +38,7 @@
         </div>
 
         <div class="password-requirements" *ngIf="registerForm.get('senha')?.dirty">
-          <div class="req-title">
-            <span class="info-icon">!</span> Sua senha deve ter:
-          </div>
+          <div class="req-title"><span class="info-icon">!</span> Sua senha deve ter:</div>
           <ul>
             <li [class.valid]="passwordCriteria.minLength">Min. 8 caracteres</li>
             <li [class.valid]="passwordCriteria.hasUpperCase">1 Letra Maiúscula</li>
