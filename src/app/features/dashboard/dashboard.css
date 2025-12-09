@@ -43,6 +43,42 @@
 .mini-date { font-size: 0.7rem; color: #888; margin-top: 6px; text-align: right; font-style: italic; }
 .empty-list-msg { text-align: center; color: #999; margin-top: 20px; font-size: 0.9rem; }
 
+/* --- ANIMAÇÕES DE ALERTA --- */
+@keyframes urgent-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.4); border-color: #ff5252; }
+  70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); border-color: #ff8a80; }
+  100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); border-color: #ff5252; }
+}
+
+.mini-postit.urgent-alert {
+  animation: urgent-pulse 2s infinite;
+  border-left: 4px solid #d32f2f;
+}
+
+/* Novo Estilo: Vencido (Cinza/Morto) */
+.mini-postit.overdue-alert {
+  border-left: 4px solid #616161;
+  opacity: 0.85; /* Levemente apagado */
+  filter: grayscale(0.5); /* Desaturado */
+}
+.mini-postit.overdue-alert:hover {
+  filter: grayscale(0); /* Volta a cor ao passar mouse */
+  opacity: 1;
+}
+
+.urgent-dot {
+  width: 10px; height: 10px; background-color: #ff5252; border-radius: 50%;
+  display: inline-block; margin-right: 5px;
+  box-shadow: 0 0 5px #ff5252;
+  animation: blink-dot 1s infinite alternate;
+}
+.overdue-dot {
+  width: 10px; height: 10px; background-color: #616161; border-radius: 50%;
+  display: inline-block; margin-right: 5px;
+}
+
+@keyframes blink-dot { from { opacity: 1; } to { opacity: 0.4; } }
+
 /* --- WORKSPACE HUB --- */
 .workspace { flex: 1; padding: 30px; overflow-y: auto; background-color: #ffffff; position: relative; } 
 .hub-container {
@@ -80,13 +116,75 @@
 /* CARDS ABERTOS */
 .notes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; align-items: start; }
 .postit-card { box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; padding: 20px; min-height: 350px; border: 1px solid #eee; transition: background-color 0.3s; border-radius: 15px; }
-.postit-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px; align-items: center; }
-.postit-title-input { background: transparent; border: none; font-weight: bold; font-size: 1.2rem; width: 60%; outline: none; color: #333; }
-.postit-actions { display: flex; gap: 5px; align-items: center; }
+
+/* --- HEADER DO POST-IT --- */
+.postit-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border-bottom: 1px dashed rgba(0,0,0,0.1); 
+  padding-bottom: 10px; 
+  margin-bottom: 10px; 
+  flex-wrap: wrap; 
+  gap: 10px;
+}
+.postit-title-input { 
+  flex: 1; 
+  min-width: 150px; 
+  background: transparent; 
+  border: none; 
+  font-weight: bold; 
+  font-size: 1.2rem; 
+  outline: none; 
+  color: #333; 
+}
+.postit-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+}
+
+/* ÍCONE DE RELÓGIO (BOTÃO) */
+.clock-icon {
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+.clock-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 50%;
+}
+.clock-icon.has-date {
+  opacity: 1;
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+  animation: urgent-pulse 2s infinite; 
+}
+
+.header-date-input {
+  border: 1px solid rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.5);
+  border-radius: 15px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  max-width: 140px;
+}
+.header-date-input:focus {
+  background: #fff;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
 .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; transition: color 0.2s; }
 .btn-icon:hover { color: #333; }
 .btn-icon.fav { color: orange; }
 .btn-icon.close:hover { color: red; }
+
 .editor-toolbar { display: flex; gap: 8px; background: rgba(255,255,255,0.6); padding: 8px; border-radius: 8px; margin-bottom: 10px; border-bottom: 1px solid #e0e0e0; }
 .editor-toolbar button, .color-wrapper { background: white; border: 1px solid #ccc; border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-family: serif; display: flex; align-items: center; justify-content: center; font-size: 1rem; position: relative; color: #333; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .editor-toolbar button:hover, .color-wrapper:hover { background: #f0f0f0; }
@@ -94,11 +192,6 @@
 .postit-content-editable { flex: 1; background: transparent; border: none; outline: none; font-family: 'Segoe UI', sans-serif; font-size: 1rem; line-height: 1.5; color: #444; min-height: 200px; overflow-y: auto; white-space: pre-wrap; padding: 5px; }
 .postit-content-editable:focus { background: rgba(255,255,255,0.2); }
 .postit-footer-column { margin-top: auto; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-
-/* LEMBRETE */
-.reminder-section { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; }
-.reminder-icon { font-size: 0.85rem; font-weight: bold; color: #555; }
-.reminder-input { border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-size: 0.85rem; background: rgba(255,255,255,0.8); cursor: pointer; }
 
 .colors-row { display: flex; gap: 12px; overflow-x: auto; padding: 12px 10px; align-items: center; }
 .colors-row::-webkit-scrollbar { height: 6px; }
@@ -112,3 +205,51 @@
 .btn-mini.save { background: #28a745; color: white; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
 .btn-icon-trash { background: transparent; border: none; font-size: 1.4rem; cursor: pointer; opacity: 0.5; }
 .btn-icon-trash:hover { opacity: 1; transform: scale(1.1); color: red; }
+
+/* MODAL OVERLAY */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.6); /* Fundo escuro */
+  backdrop-filter: blur(3px); /* Desfoque */
+  z-index: 2000;
+  display: flex; justify-content: center; align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+/* CAIXA DO MODAL */
+.modal-content.urgent-theme {
+  background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px;
+  text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-top: 6px solid #ff5252;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-icon { font-size: 3rem; margin-bottom: 10px; animation: bounce 1s infinite; }
+.modal-content h2 { margin: 0 0 10px 0; color: #d32f2f; }
+.modal-content p { color: #555; margin-bottom: 20px; font-size: 1.1rem; }
+.modal-question { font-weight: bold; color: #333; margin-bottom: 25px; }
+
+/* BOTÕES DO MODAL */
+.modal-actions { display: flex; flex-direction: column; gap: 15px; }
+
+.btn-modal {
+  padding: 15px; border: none; border-radius: 30px;
+  font-size: 1.1rem; font-weight: bold; cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-modal:hover { transform: scale(1.03); filter: brightness(1.1); }
+
+.btn-success { background: #4caf50; color: white; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+.btn-warning { background: #ff9800; color: white; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); }
+.btn-danger { background: #d32f2f; color: white; box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3); }
+
+.btn-link-close {
+  background: none; border: none; color: #999; margin-top: 20px;
+  cursor: pointer; text-decoration: underline; font-size: 0.9rem;
+}
+.btn-link-close:hover { color: #666; }
+
+/* ANIMAÇÕES */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }

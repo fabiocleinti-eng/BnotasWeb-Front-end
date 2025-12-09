@@ -6,40 +6,146 @@
     <div class="sidebar-header">
       <div class="header-title-row">
         <h3>Minhas Notas</h3>
-        <span class="fav-badge" *ngIf="favCount > 0" title="Total de Favoritas">★ {{ favCount }}</span>
+        <span class="fav-badge" *ngIf="favCount > 0" title="Total de notas Favoritas">★ {{ favCount }}</span>
       </div>
-      <button class="btn-new-sidebar" (click)="createNote()">+ Nova</button>
+      <button class="btn-new-sidebar" (click)="createNote()" title="Criar uma nova nota em branco">+ Nova</button>
     </div>
 
     <div class="search-box">
-      <input type="text" placeholder="Buscar..." (input)="onSearch($event)">
+      <input type="text" placeholder="Buscar..." (input)="onSearch($event)" title="Digite para filtrar por título ou conteúdo">
     </div>
 
     <div class="notes-list-container">
+      
+      <div class="color-group" *ngIf="overdueNotes.length > 0">
+        <div class="group-header" style="border-left-color: #616161; background-color: #eeeeee;" title="Notas com prazo expirado">
+          <div class="group-label">
+            <span class="overdue-dot" title="Prazo vencido!"></span>
+            <span class="count" style="color: #616161; font-weight: bold;">Vencidos ({{ overdueNotes.length }})</span>
+          </div>
+        </div>
+
+        <div class="group-notes" style="border-left: 2px solid #bdbdbd;">
+          <div class="mini-postit overdue-alert" 
+               *ngFor="let note of overdueNotes" 
+               (click)="openNote(note)" 
+               [style.backgroundColor]="note.cor" 
+               [class.minimized]="note.isCollapsed"
+               title="Esta nota venceu! Clique para resolver.">
+            
+            <div class="mini-header">
+              <div style="display:flex; align-items:center; flex:1; overflow:hidden;">
+                 <span class="overdue-dot"></span>
+                 
+                 <span *ngIf="note.qtdReagendamentos && note.qtdReagendamentos > 0" 
+                       style="margin-right:5px; cursor:help; font-size: 0.85rem; font-weight:bold; color: #d32f2f;" 
+                       [title]="'Atenção: Esta tarefa já foi reagendada ' + note.qtdReagendamentos + ' vezes!'">
+                   ❗{{ note.qtdReagendamentos }}
+                 </span>
+
+                 <span class="mini-title" style="text-decoration: line-through; opacity: 0.7;">{{ note.titulo || 'Sem título' }}</span>
+              </div>
+              <div class="header-icons">
+                <span class="mini-clock" style="color: #616161; font-weight:bold; font-size:0.75rem" title="Venceu em">
+                  {{ note.dataLembrete | date:'dd/MM HH:mm' }}
+                </span>
+                <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
+                <button class="btn-collapse" (click)="toggleCollapse($event, note)" title="Expandir">{{ note.isCollapsed ? '▼' : '▲' }}</button>
+              </div>
+            </div>
+            
+            <div class="mini-body" *ngIf="!note.isCollapsed">
+              <div class="mini-content" [innerHTML]="note.conteudo | slice:0:40" style="opacity: 0.6;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="color-group" *ngIf="urgentNotes.length > 0">
+        <div class="group-header" style="border-left-color: #ff5252; background-color: #ffebee;" title="Notas com prazo agendado">
+          <div class="group-label">
+            <span class="urgent-dot" title="Atenção necessária"></span>
+            <span class="count" style="color: #d32f2f; font-weight: bold;">Urgentes ({{ urgentNotes.length }})</span>
+          </div>
+        </div>
+
+        <div class="group-notes" style="border-left: 2px solid #ffcdd2;">
+          <div class="mini-postit urgent-alert" 
+               *ngFor="let note of urgentNotes" 
+               (click)="openNote(note)" 
+               [style.backgroundColor]="note.cor" 
+               [class.minimized]="note.isCollapsed"
+               title="Clique para abrir esta nota urgente">
+            
+            <div class="mini-header">
+              <div style="display:flex; align-items:center; flex:1; overflow:hidden;">
+                 <span class="urgent-dot"></span>
+                 
+                 <span *ngIf="note.qtdReagendamentos && note.qtdReagendamentos > 0" 
+                       style="margin-right:5px; cursor:help; font-size: 0.85rem; font-weight:bold; color: #d32f2f;" 
+                       [title]="'Atenção: Esta tarefa já foi reagendada ' + note.qtdReagendamentos + ' vezes!'">
+                   ❗{{ note.qtdReagendamentos }}
+                 </span>
+
+                 <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
+              </div>
+              
+              <div class="header-icons">
+                <span class="mini-clock" style="color: #d32f2f; font-weight:bold; font-size:0.75rem" title="Data do prazo">
+                  {{ note.dataLembrete | date:'dd/MM HH:mm' }}
+                </span>
+                <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
+                <button class="btn-collapse" (click)="toggleCollapse($event, note)" title="Expandir">{{ note.isCollapsed ? '▼' : '▲' }}</button>
+              </div>
+            </div>
+            
+            <div class="mini-body" *ngIf="!note.isCollapsed">
+              <div class="mini-content" [innerHTML]="note.conteudo | slice:0:40"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="color-group" *ngFor="let group of noteGroups">
-        <div class="group-header" (click)="toggleGroup(group)" [style.borderLeftColor]="group.color">
+        <div class="group-header" (click)="toggleGroup(group)" [style.borderLeftColor]="group.color" title="Clique para expandir/recolher grupo">
           <div class="group-label">
             <div class="color-badge" [style.backgroundColor]="group.color"></div>
             <span class="count">{{ group.notes.length }} notas</span>
-            <span class="group-fav-badge" *ngIf="group.favCount > 0">★ {{ group.favCount }}</span>
+            <span class="group-fav-badge" *ngIf="group.favCount > 0" title="Favoritas">★ {{ group.favCount }}</span>
           </div>
           <span class="arrow">{{ group.isOpen ? '▼' : '▶' }}</span>
         </div>
 
         <div class="group-notes" *ngIf="group.isOpen">
-          <div class="mini-postit" *ngFor="let note of group.notes" (click)="openNote(note)" [style.backgroundColor]="group.color" [class.minimized]="note.isCollapsed">
+          <div class="mini-postit" 
+               *ngFor="let note of group.notes" 
+               (click)="openNote(note)" 
+               [style.backgroundColor]="group.color" 
+               [class.minimized]="note.isCollapsed"
+               title="Clique para abrir">
             <div class="mini-header">
-              <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
+              
+              <div style="display:flex; align-items:center; flex:1; overflow:hidden;">
+                 
+                 <span *ngIf="note.qtdReagendamentos && note.qtdReagendamentos > 0" 
+                       style="margin-right:5px; cursor:help; font-size: 0.85rem; font-weight:bold; color: #d32f2f;" 
+                       [title]="'Atenção: Esta tarefa já foi reagendada ' + note.qtdReagendamentos + ' vezes!'">
+                   ❗{{ note.qtdReagendamentos }}
+                 </span>
+
+                 <span class="mini-title">{{ note.titulo || 'Sem título' }}</span>
+              </div>
+
               <div class="header-icons">
-                <span *ngIf="note.favorita" class="mini-star">★</span>
-                <span *ngIf="note.dataLembrete" class="mini-clock" title="Tem lembrete">⏰</span>
+                <span *ngIf="note.favorita" class="mini-star" title="Favorita">★</span>
+                <span *ngIf="note.dataLembrete" class="mini-clock" title="Com lembrete">⏰</span>
                 <button class="btn-delete-header" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑️</button>
-                <button class="btn-collapse" (click)="toggleCollapse($event, note)">{{ note.isCollapsed ? '▼' : '▲' }}</button>
+                <button class="btn-collapse" (click)="toggleCollapse($event, note)" title="Expandir">{{ note.isCollapsed ? '▼' : '▲' }}</button>
               </div>
             </div>
             <div class="mini-body" *ngIf="!note.isCollapsed">
               <div class="mini-content" [innerHTML]="note.conteudo | slice:0:40"></div>
-              <div class="mini-date" *ngIf="note.dataCriacao">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</div>
+              <div class="mini-date" *ngIf="note.dataCriacao" title="Criado em">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</div>
             </div>
           </div>
         </div>
@@ -66,14 +172,14 @@
           </div>
         </header>
         <div class="hub-main-action">
-          <button class="btn-big-create" (click)="createNote()">
+          <button class="btn-big-create" (click)="createNote()" title="Nova Nota">
             <span class="plus-icon">+</span>
             <span>Criar Nova Nota</span>
           </button>
         </div>
-        <div class="scratchpad-wrapper">
+        <div class="scratchpad-wrapper" title="Rascunho temporário">
           <div class="scratchpad-header">
-            <span>🚀 Rascunho Rápido (Não salvo no banco)</span>
+            <span>🚀 Rascunho Rápido</span>
           </div>
           <textarea 
             [(ngModel)]="scratchpadContent" 
@@ -87,40 +193,90 @@
 
     <div class="notes-grid" *ngIf="openNotes.length > 0">
       <div class="postit-card" *ngFor="let note of openNotes; let i = index" [style.backgroundColor]="note.cor">
+        
         <div class="postit-header">
-          <input type="text" [(ngModel)]="note.titulo" placeholder="Título" class="postit-title-input">
+          <div style="display: flex; align-items: center; width: 100%;">
+             <span *ngIf="note.qtdReagendamentos && note.qtdReagendamentos > 0" 
+                   style="margin-right:10px; cursor:help; font-size: 1rem; font-weight:bold; color: #d32f2f;" 
+                   [title]="'Esta tarefa foi reagendada ' + note.qtdReagendamentos + ' vezes.'">
+               ❗ {{ note.qtdReagendamentos }}x
+             </span>
+             <input type="text" [(ngModel)]="note.titulo" placeholder="Título" class="postit-title-input" title="Título da nota">
+          </div>
+          
           <div class="postit-actions">
-            <button class="btn-icon" (click)="note.favorita = !note.favorita" [class.fav]="note.favorita">★</button>
-            <button class="btn-icon close" (click)="closeNote(i)">✕</button>
+            
+            <button 
+              *ngIf="!note.isDateEditing" 
+              class="btn-icon clock-icon" 
+              (click)="toggleDateEdit(note, true)" 
+              [class.has-date]="note.dataLembrete"
+              title="Definir Lembrete">
+              ⏰
+            </button>
+
+            <input 
+              *ngIf="note.isDateEditing"
+              [id]="'date-input-' + note.id"
+              type="datetime-local" 
+              [(ngModel)]="note.dataLembrete" 
+              class="header-date-input" 
+              (blur)="toggleDateEdit(note, false)"
+              title="Data do alerta"
+            >
+
+            <button class="btn-icon" (click)="note.favorita = !note.favorita" [class.fav]="note.favorita" title="Favoritar">★</button>
+            <button class="btn-icon close" (click)="closeNote(i)" title="Fechar">✕</button>
           </div>
         </div>
+
         <div class="editor-toolbar" (mousedown)="$event.preventDefault()">
-          <button (click)="formatText('bold')"><b>B</b></button>
-          <button (click)="formatText('italic')"><i>I</i></button>
-          <button (click)="formatText('underline')"><u>U</u></button>
-          <div class="color-wrapper"><span style="color:red; font-weight:bold;">A</span><input type="color" (input)="formatText('foreColor', $any($event.target).value)"></div>
-          <div class="color-wrapper"><span style="background:yellow;">M</span><input type="color" (input)="formatText('hiliteColor', $any($event.target).value)"></div>
+          <button (click)="formatText('bold')" title="Negrito"><b>B</b></button>
+          <button (click)="formatText('italic')" title="Itálico"><i>I</i></button>
+          <button (click)="formatText('underline')" title="Sublinhado"><u>U</u></button>
+          <div class="color-wrapper" title="Cor do Texto"><span style="color:red; font-weight:bold;">A</span><input type="color" (input)="formatText('foreColor', $any($event.target).value)"></div>
+          <div class="color-wrapper" title="Cor de Fundo"><span style="background:yellow;">M</span><input type="color" (input)="formatText('hiliteColor', $any($event.target).value)"></div>
         </div>
-        <div class="postit-content-editable" contenteditable="true" [innerHTML]="note.conteudo" (blur)="updateContent($event, note)"></div>
+        
+        <div class="postit-content-editable" contenteditable="true" [innerHTML]="note.conteudo" (blur)="updateContent($event, note)" title="Conteúdo"></div>
         
         <div class="postit-footer-column">
-          <div class="reminder-section">
-            <span class="reminder-icon">⏰ Lembrete:</span>
-            <input type="datetime-local" [(ngModel)]="note.dataLembrete" class="reminder-input">
-          </div>
-
           <div class="colors-row">
-             <div *ngFor="let color of availableColors" class="color-dot" [style.backgroundColor]="color" (click)="changeNoteColor(note, color)" [class.selected]="note.cor === color"></div>
+             <div *ngFor="let color of availableColors" class="color-dot" [style.backgroundColor]="color" (click)="changeNoteColor(note, color)" [class.selected]="note.cor === color" title="Mudar Cor"></div>
           </div>
           <div class="footer-bottom-row">
             <span class="date" *ngIf="note.dataCriacao">{{ note.dataCriacao | date:'dd/MM/yyyy' }}</span>
             <div class="footer-btns">
-              <button class="btn-icon-trash" (click)="deleteNote(note, i)">🗑️</button>
-              <button class="btn-mini save" (click)="saveNote(note)">Salvar</button>
+              <button class="btn-icon-trash" (click)="deleteNote(note, i)" title="Excluir Nota">🗑️</button>
+              <button class="btn-mini save" (click)="saveNote(note)" title="Salvar">Salvar</button>
             </div>
           </div>
         </div>
       </div>
     </div>
   </main>
+
+  <div class="modal-overlay" *ngIf="showUrgentModal && criticalNote">
+    <div class="modal-content urgent-theme">
+      <div class="modal-icon">🚨</div>
+      <h2>Atenção Máxima!</h2>
+      <p>A tarefa <strong>"{{ criticalNote.titulo }}"</strong> venceu ou vence em instantes!</p>
+      <p class="modal-question">Qual a situação?</p>
+      
+      <div class="modal-actions">
+        <button class="btn-modal btn-success" (click)="markAsDone()" title="Marcar como concluída">
+          ✅ Já Realizei
+        </button>
+        <button class="btn-modal btn-warning" (click)="snoozeTask()" title="Trocar a data">
+          📅 Preciso Reagendar
+        </button>
+        <button class="btn-modal btn-danger" (click)="deleteCriticalNote()" title="Apagar esta nota para sempre">
+          🗑️ Excluir Nota
+        </button>
+      </div>
+      
+      <button class="btn-link-close" (click)="showUrgentModal = false">Fechar (Ignorar por enquanto)</button>
+    </div>
+  </div>
+
 </div>
