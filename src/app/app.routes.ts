@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
-import { Layout } from './core/layout/layout/layout';
+// CORREÇÃO: Importar o nome correto da classe
+import { LayoutComponent } from './core/layout/layout/layout';
 
 export const routes: Routes = [
   // ROTA PÚBLICA: Login
@@ -9,7 +10,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login.component')
       .then(m => m.LoginComponent)
   },
-  // ROTA PÚBLICA: Redefinir Senha (Esta deve estar aqui, fora do AuthGuard!)
+  // ROTA PÚBLICA: Redefinir Senha
   {
     path: 'reset-password',
     loadComponent: () => import('./features/reset-password/reset-password.component')
@@ -19,8 +20,8 @@ export const routes: Routes = [
   // ROTAS PROTEGIDAS (Exigem Login)
   {
     path: '',
-    component: Layout,
-    canActivate: [authGuard], // O "porteiro" fica aqui
+    component: LayoutComponent, // <--- CORREÇÃO AQUI (Usar LayoutComponent)
+    canActivate: [authGuard], 
     children: [
       {
         path: '',
@@ -35,7 +36,7 @@ export const routes: Routes = [
     ]
   },
   
-  // ROTA DE ERRO (Redireciona para login se não achar nada)
+  // ROTA DE ERRO
   {
     path: '**',
     redirectTo: 'login'

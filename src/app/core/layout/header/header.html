@@ -1,10 +1,23 @@
-<header class="main-header">
-  <div class="logo">
-    BnotasWeb
+<nav class="navbar">
+  <div class="navbar-brand">
+    Bnotas<b>Web</b>
   </div>
-  <nav class="main-nav">
-    <button (click)="logout()">
+
+  <div class="header-actions">
+    
+    <button 
+      class="btn-alert" 
+      [class.urgent]="temUrgencia"
+      (click)="abrirModalManual()" 
+      title="Ver Alertas">
+      
+      <i class="fa fa-bell"></i>
+      
+      <span class="notification-badge" *ngIf="temUrgencia"></span>
+    </button>
+
+    <button class="btn-logout" (click)="logout()">
       Sair
     </button>
-  </nav>
-</header>
+  </div>
+</nav>

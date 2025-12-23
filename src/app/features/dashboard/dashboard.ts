@@ -5,18 +5,21 @@ import { NoteService } from '../../core/services/note.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Note } from '../../core/models/note.model';
 import { interval, Subscription } from 'rxjs';
+import { AlertManagerService } from '../../core/services/alert-manager.service';
+import { TiltCardDirective } from '../../shared/directives/tilt-card.directive';
 
 interface NoteGroup {
   color: string;
   notes: Note[];
+  activeIndex: number;
+  count: number;
   isOpen: boolean;
-  favCount: number;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TiltCardDirective],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
@@ -25,354 +28,239 @@ export class DashboardComponent implements OnInit, OnDestroy {
   noteGroups: NoteGroup[] = [];
   openNotes: Note[] = [];
   
-  // Listas Especiais
-  urgentNotes: Note[] = [];
-  overdueNotes: Note[] = [];
+  availableColors: string[] = ['#fff9c4', '#f50c23ff', '#bbdefb', '#c8e6c9'];
   
   searchTerm: string = '';
-  showToast: boolean = false;
-  toastMessage: string = '';
-
-  today: Date = new Date();
   userName: string = 'Usuário';
   scratchpadContent: string = '';
 
-  // Controle do Modal de Alerta
   showUrgentModal: boolean = false;
-  criticalNote: Note | null = null;
+  criticalNotes: Note[] = [];
   private checkerSub: Subscription | undefined;
-
-  // Lista de IDs silenciados na sessão (para o modal não reabrir enquanto edita)
-  snoozedSessionIds: Set<number> = new Set();
-
-  availableColors: string[] = [
-    '#fff9c4', '#ffcdd2', '#f8bbd0', '#e1bee7',
-    '#d1c4e9', '#c5cae9', '#bbdefb', '#b3e5fc',
-    '#b2dfdb', '#c8e6c9', '#f0f4c3', '#ffe0b2', '#f5f5f5'
-  ];
+  
+  private lastWheelTime = 0;
 
   constructor(
     private noteService: NoteService,
-    private authService: AuthService
+    private authService: AuthService,
+    private alertService: AlertManagerService
   ) {}
 
   ngOnInit(): void {
     this.loadNotes();
     this.loadScratchpad();
     this.loadUserName();
-
-    // Verifica tarefas críticas a cada 30 segundos
     this.checkerSub = interval(30000).subscribe(() => this.checkCriticalTasks());
+    
+    document.addEventListener('bnotas:abrir-alerta', () => {
+       if (this.criticalNotes.length > 0) this.showUrgentModal = true;
+    });
   }
 
-  ngOnDestroy(): void {
-    if (this.checkerSub) this.checkerSub.unsubscribe();
-  }
-
-  loadUserName(): void {
-    const user = this.authService.getUser();
-    if (user && (user as any).nome) {
-      this.userName = (user as any).nome;
-    } else if (user && user.email) {
-      const namePart = user.email.split('@')[0];
-      this.userName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    }
-  }
-
-  get favCount(): number { return this.notes.filter(n => n.favorita).length; }
-  get totalNotes(): number { return this.notes.length; }
-
-  loadScratchpad(): void {
-    const saved = localStorage.getItem('bnotas_scratchpad');
-    if (saved) this.scratchpadContent = saved;
-  }
-
-  onScratchpadChange(): void {
-    localStorage.setItem('bnotas_scratchpad', this.scratchpadContent);
-  }
-
-  displayToast(message: string): void {
-    this.toastMessage = message;
-    this.showToast = true;
-    setTimeout(() => { this.showToast = false; }, 3000);
-  }
+  ngOnDestroy(): void { if (this.checkerSub) this.checkerSub.unsubscribe(); }
 
   loadNotes(): void {
     this.noteService.getNotes().subscribe({
       next: (data) => {
-        this.notes = data.map(n => ({
-          ...n,
-          cor: n.cor || '#fff9c4',
-          isCollapsed: false,
-          isDateEditing: false,
-          qtdReagendamentos: n.qtdReagendamentos || 0
+        this.notes = data.map(n => ({ 
+            ...n, 
+            cor: this.isValidColor(n.cor) ? n.cor : this.availableColors[0],
+            isDateEditing: false 
         }));
         this.organizeGroups();
+        this.checkCriticalTasks();
       },
-      error: (err) => console.error('Erro', err)
+      error: (err) => console.error(err)
     });
   }
 
-  onSearch(event: any): void {
-    this.searchTerm = event.target.value.toLowerCase();
-    this.organizeGroups();
+  isValidColor(color: string | undefined): boolean {
+      if(!color) return false;
+      return this.availableColors.includes(color) || color === '#f0f0f0'; 
   }
 
   organizeGroups(): void {
     let filtered = this.notes;
     if (this.searchTerm) {
-      filtered = filtered.filter(n =>
-        n.titulo.toLowerCase().includes(this.searchTerm) ||
-        n.conteudo.toLowerCase().includes(this.searchTerm)
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(n => 
+        (n.titulo && n.titulo.toLowerCase().includes(term)) || 
+        (n.conteudo && n.conteudo.toLowerCase().includes(term))
       );
     }
 
-    const agora = new Date();
-    
-    // 1. Identifica notas com lembrete
-    const comLembrete = filtered.filter(n => n.dataLembrete);
-
-    // 2. Separa Vencidos (Passado) e Urgentes (Futuro)
-    this.overdueNotes = comLembrete.filter(n => new Date(n.dataLembrete!) < agora);
-    this.urgentNotes = comLembrete.filter(n => new Date(n.dataLembrete!) >= agora);
-
-    // 3. Cria um SET com os IDs que devem sair da lista geral para não duplicar
-    const idsEspeciais = new Set([
-      ...this.overdueNotes.map(n => n.id), 
-      ...this.urgentNotes.map(n => n.id)
-    ]);
-
-    // 4. Filtra a lista principal removendo esses IDs
-    const notasNormais = filtered.filter(n => !idsEspeciais.has(n.id));
-
-    // 5. Agrupa apenas as notas normais
     const groupsMap: { [key: string]: Note[] } = {};
-    notasNormais.forEach(note => {
-      const color = note.cor || '#fff9c4';
-      if (!groupsMap[color]) groupsMap[color] = [];
+    this.availableColors.forEach(c => groupsMap[c] = []);
+
+    filtered.forEach(note => {
+      let color = note.cor || this.availableColors[0];
+      if (!groupsMap[color]) color = this.availableColors[0];
       groupsMap[color].push(note);
     });
 
-    this.noteGroups = Object.keys(groupsMap).map(color => {
-      const existingGroup = this.noteGroups.find(g => g.color === color);
-      const notesInGroup = groupsMap[color];
-      const favorites = notesInGroup.filter(n => n.favorita).length;
+    this.noteGroups = Object.keys(groupsMap)
+        .filter(color => groupsMap[color].length > 0)
+        .map(color => {
+          const existing = this.noteGroups.find(g => g.color === color);
+          // SEGURANÇA DE ÍNDICE
+          const count = groupsMap[color].length;
+          let newIndex = existing ? existing.activeIndex : 0;
+          if(newIndex >= count) newIndex = 0;
 
-      return {
-        color: color,
-        notes: notesInGroup,
-        isOpen: existingGroup ? existingGroup.isOpen : true,
-        favCount: favorites
-      };
-    });
-    this.noteGroups.sort((a, b) => a.color.localeCompare(b.color));
-  }
-
-  // --- LÓGICA DE ALERTAS ---
-
-  checkCriticalTasks(): void {
-    const agora = new Date().getTime();
-    
-    const critical = this.notes.find(n => {
-      if (!n.dataLembrete || !n.id) return false;
-
-      // Se já está aberto na tela, ignora (usuário já está vendo)
-      const isAlreadyOpen = this.openNotes.some(open => open.id === n.id);
-      if (isAlreadyOpen) return false;
-
-      // Se o usuário clicou em "Reagendar" nesta sessão, ignora
-      if (this.snoozedSessionIds.has(n.id)) return false;
-
-      const dataLembrete = new Date(n.dataLembrete).getTime();
-      const diffMinutos = (dataLembrete - agora) / 1000 / 60;
-      
-      // Regra crítica: Vencido OU falta menos de 10 minutos
-      return diffMinutos < 10; 
-    });
-
-    // Abre o modal se tiver nota crítica e ele não estiver aberto
-    if (critical && !this.showUrgentModal) {
-      this.criticalNote = critical;
-      this.showUrgentModal = true;
-    }
-  }
-
-  markAsDone(): void {
-    if (!this.criticalNote) return;
-    if (confirm('Marcar como realizada? O lembrete será removido.')) {
-      // Remove o lembrete e zera o contador de reagendamentos
-      const updatedNote = { ...this.criticalNote, dataLembrete: null, qtdReagendamentos: 0 };
-      this.noteService.updateNote(this.criticalNote.id!, updatedNote as any).subscribe(() => {
-        this.displayToast('Tarefa concluída! 🎉');
-        this.showUrgentModal = false;
-        this.criticalNote = null;
-        this.loadNotes();
-      });
-    }
-  }
-
-  snoozeTask(): void {
-    if (!this.criticalNote || !this.criticalNote.id) return;
-    
-    // Adiciona na lista de "Silenciados" para o modal não voltar imediatamente
-    this.snoozedSessionIds.add(this.criticalNote.id);
-
-    this.showUrgentModal = false;
-    this.openNote(this.criticalNote);
-    
-    // Abre o calendário automaticamente
-    setTimeout(() => {
-        this.toggleDateEdit(this.criticalNote!, true);
-    }, 300);
-  }
-
-  deleteCriticalNote(): void {
-    if (!this.criticalNote) return;
-    if (confirm('Tem certeza que deseja EXCLUIR esta nota permanentemente?')) {
-      this.noteService.deleteNote(this.criticalNote.id!).subscribe(() => {
-        this.displayToast('Nota excluída.');
-        this.showUrgentModal = false;
-        this.criticalNote = null;
-        this.loadNotes();
-      });
-    }
-  }
-
-  // --- LÓGICA DO DASHBOARD ---
-
-  toggleGroup(group: NoteGroup): void { group.isOpen = !group.isOpen; }
-
-  openNote(note: Note): void {
-    const alreadyOpen = this.openNotes.find(n => n.id === note.id);
-    if (alreadyOpen) return;
-    if (this.openNotes.length >= 4) {
-      this.displayToast('Máximo de 4 notas abertas!');
-      return;
-    }
-
-    let formattedDate = '';
-    if (note.dataLembrete) {
-      const d = new Date(note.dataLembrete);
-      // Ajuste para exibir no input local corretamente
-      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-      formattedDate = d.toISOString().slice(0, 16);
-    }
-
-    this.openNotes.push({
-      ...note,
-      cor: note.cor || '#fff9c4',
-      dataLembrete: formattedDate,
-      isDateEditing: false
+          return {
+            color: color,
+            notes: groupsMap[color],
+            count: count,
+            activeIndex: newIndex, 
+            isOpen: existing ? existing.isOpen : true 
+          };
     });
   }
 
+  toggleGroup(group: NoteGroup): void {
+    group.isOpen = !group.isOpen;
+  }
+
+  // --- LÓGICA DA ROLETA ---
+  onDeckWheel(event: WheelEvent, group: NoteGroup): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const now = new Date().getTime();
+    if (now - this.lastWheelTime < 150) return; 
+    this.lastWheelTime = now;
+
+    if (group.count <= 1) return;
+
+    // SEGURANÇA EXTRA: Se índice estiver quebrado, reseta
+    if (group.activeIndex === undefined || group.activeIndex < 0 || group.activeIndex >= group.count) {
+        group.activeIndex = 0;
+    }
+
+    if (event.deltaY > 0) {
+      this.nextCard(group);
+    } else {
+      this.prevCard(group);
+    }
+  }
+
+  nextCard(group: NoteGroup) {
+    group.activeIndex = (group.activeIndex + 1) % group.count;
+  }
+
+  prevCard(group: NoteGroup) {
+    group.activeIndex = (group.activeIndex - 1 + group.count) % group.count;
+  }
+
+  // Métodos Auxiliares
+  onSearch(event: any): void { this.searchTerm = event.target.value; this.organizeGroups(); }
   createNote(): void {
-    if (this.openNotes.length >= 4) {
-      this.displayToast('Feche uma nota para criar uma nova.');
-      return;
-    }
-    const newNote: Note = { titulo: '', conteudo: '', favorita: false, cor: '#fff9c4' };
+    const newNote: Note = { titulo: '', conteudo: '', cor: this.availableColors[0], favorita: false, isDateEditing: false };
     this.openNotes.push(newNote);
   }
-
-  closeNote(index: number): void { this.openNotes.splice(index, 1); }
-
-  changeNoteColor(note: Note, color: string): void {
-    note.cor = color;
-    if (note.id) {
-      const sidebarNote = this.notes.find(n => n.id === note.id);
-      if (sidebarNote) sidebarNote.cor = color;
+  openNote(note: Note): void {
+    if (this.openNotes.find(n => n.id === note.id)) return;
+    let formattedDate = undefined;
+    if (note.dataLembrete) {
+       const d = new Date(note.dataLembrete);
+       if(!isNaN(d.getTime())) {
+           const offset = d.getTimezoneOffset() * 60000;
+           formattedDate = new Date(d.getTime() - offset).toISOString().slice(0, 16);
+       }
     }
-    this.organizeGroups();
+    this.openNotes.push({ ...note, dataLembrete: formattedDate, isDateEditing: !!note.dataLembrete });
   }
-
+  toggleDateEdit(note: Note): void { note.isDateEditing = !note.isDateEditing; }
+  updateReminderDate(note: Note, newDate: string): void { note.dataLembrete = newDate; }
+  saveNote(note: Note): void {
+    if (!note.titulo) { alert('Título obrigatório!'); return; }
+    const noteToSend = { ...note };
+    if (note.dataLembrete) noteToSend.dataLembrete = new Date(note.dataLembrete).toISOString();
+    else noteToSend.dataLembrete = null as any; 
+    if (note.id) {
+        this.noteService.updateNote(note.id, noteToSend).subscribe(() => this.loadNotes());
+    } else {
+        this.noteService.createNote(noteToSend).subscribe((created) => {
+            note.id = created.id;
+            this.loadNotes();
+        });
+    }
+  }
+  deleteNote(note: Note, index: number): void {
+    if(!note.id) { this.openNotes.splice(index, 1); return; }
+    if(confirm('Excluir esta nota?')) {
+       this.noteService.deleteNote(note.id).subscribe(() => {
+          this.openNotes.splice(index, 1);
+          this.loadNotes();
+       });
+    }
+  }
   deleteFromSidebar(event: Event, note: Note): void {
     event.stopPropagation();
-    if (!note.id) return;
-    if (confirm(`Excluir "${note.titulo}"?`)) {
-      this.noteService.deleteNote(note.id).subscribe(() => {
-        this.loadNotes();
-        const openIndex = this.openNotes.findIndex(n => n.id === note.id);
-        if (openIndex !== -1) this.closeNote(openIndex);
-        this.displayToast('Nota excluída.');
-      });
+    if(confirm('Excluir nota "' + note.titulo + '"?')) {
+        this.noteService.deleteNote(note.id!).subscribe(() => {
+            this.loadNotes();
+            this.openNotes = this.openNotes.filter(n => n.id !== note.id);
+        });
     }
   }
-
-  saveNote(note: Note): void {
-    if (!note.titulo) { this.displayToast('Título obrigatório!'); return; }
-
-    let dataFormatada = null;
-    if (note.dataLembrete) {
-      dataFormatada = new Date(note.dataLembrete).toISOString();
-    }
-
-    const noteToSend = { ...note, dataLembrete: dataFormatada };
-
-    const onComplete = () => {
-      this.loadNotes();
-      this.displayToast('Nota salva com sucesso!');
-      
-      // Remove da lista de silenciados pois a ação foi concluída/salva
-      if (note.id) this.snoozedSessionIds.delete(note.id);
-    };
-
-    const onError = (err: any) => {
-      console.error('Erro ao salvar:', err);
-      this.displayToast('Erro ao salvar. Verifique os dados.');
-    };
-
-    if (note.id) {
-      this.noteService.updateNote(note.id, noteToSend as any).subscribe({
-        next: onComplete,
-        error: onError
-      });
+  closeNote(index: number): void { this.openNotes.splice(index, 1); }
+  changeNoteColor(note: Note, color: string): void { note.cor = color; }
+  getCardBackground(color: string | undefined): string { return color || '#ffffff'; }
+  isExpired(note: Note): boolean {
+    if (!note.dataLembrete) return false;
+    const d = new Date(note.dataLembrete);
+    return !isNaN(d.getTime()) && d.getTime() < new Date().getTime();
+  }
+  isUrgent(note: Note): boolean {
+      if (!note.dataLembrete) return false;
+      const d = new Date(note.dataLembrete).getTime();
+      const now = new Date().getTime();
+      return d < now || (d - now) < (24 * 60 * 60 * 1000); 
+  }
+  getPreview(note: Note): string {
+    const txt = note.conteudo || '';
+    return txt.replace(/<[^>]*>/g, '').substring(0, 50) + (txt.length > 50 ? '...' : '');
+  }
+  get totalNotes(): number { return this.notes ? this.notes.length : 0; }
+  loadUserName() { 
+    const user = this.authService.getUser();
+    if (user) this.userName = (user as any).nome || user.email;
+  }
+  loadScratchpad() { this.scratchpadContent = localStorage.getItem('bnotas_scratchpad') || ''; }
+  onScratchpadChange() { localStorage.setItem('bnotas_scratchpad', this.scratchpadContent); }
+  checkCriticalTasks(force: boolean = false) {
+    const agora = new Date().getTime();
+    this.criticalNotes = this.notes.filter(n => {
+      if (!n.dataLembrete || !n.id) return false;
+      const dataLembrete = new Date(n.dataLembrete).getTime();
+      const diffMinutos = (dataLembrete - agora) / 1000 / 60;
+      return diffMinutos < 10 && diffMinutos > -60;
+    });
+    if (this.criticalNotes.length > 0) {
+      this.alertService.ativarAlerta(true);
+      if (force || (this.alertService.deveAbrirModal() && !this.showUrgentModal)) {
+        this.showUrgentModal = true;
+      }
     } else {
-      this.noteService.createNote(noteToSend as any).subscribe({
-        next: (created) => {
-          note.id = created.id;
-          note.dataCriacao = created.dataCriacao;
-          note.cor = created.cor || note.cor;
-          note.qtdReagendamentos = created.qtdReagendamentos || 0;
-          
-          this.notes.unshift(note);
-          this.organizeGroups();
-          this.displayToast('Criado!');
-        },
-        error: onError
+      this.alertService.ativarAlerta(false);
+      this.criticalNotes = [];
+    }
+  }
+  markAsDone(note?: Note) { 
+      if(note) { this.updateNoteAsDone(note); } else { [...this.criticalNotes].forEach(n => this.updateNoteAsDone(n)); }
+  } 
+  private updateNoteAsDone(note: Note) {
+      if(!note.id) return;
+      const updated = { ...note, dataLembrete: null };
+      this.noteService.updateNote(note.id, updated as any).subscribe(() => {
+          this.loadNotes();
+          this.criticalNotes = this.criticalNotes.filter(n => n.id !== note.id);
+          if(this.criticalNotes.length === 0) {
+              this.alertService.limpar();
+              this.showUrgentModal = false;
+          }
       });
-    }
   }
-
-  toggleDateEdit(note: Note, show: boolean): void {
-    if (show) {
-      note.isDateEditing = true;
-      // Pequeno delay para garantir que o input foi renderizado antes de dar foco
-      setTimeout(() => {
-        const inputId = 'date-input-' + note.id;
-        const element = document.getElementById(inputId);
-        if (element) {
-          (element as HTMLElement).focus();
-        }
-      }, 100);
-    } else {
-      // Delay para permitir interações (ex: clicar no calendário)
-      setTimeout(() => {
-        note.isDateEditing = false;
-      }, 200);
-    }
-  }
-
-  formatText(cmd: string, val: string = '') { document.execCommand(cmd, false, val); }
-  updateContent(e: any, n: Note) { n.conteudo = e.target.innerHTML; }
-
-  deleteNote(n: Note, i: number) {
-    if(!n.id) { this.closeNote(i); return; }
-    if(confirm('Excluir?')) this.noteService.deleteNote(n.id).subscribe(() => { this.closeNote(i); this.loadNotes(); });
-  }
-
-  toggleCollapse(event: Event, note: Note): void {
-    event.stopPropagation();
-    note.isCollapsed = !note.isCollapsed;
-  }
+  snoozeTask() { this.alertService.snooze(); this.showUrgentModal = false; }
 }
