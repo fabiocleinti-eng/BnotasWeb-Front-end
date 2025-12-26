@@ -14,9 +14,8 @@
     </div>
 
     <div class="sidebar-list-scroll">
-      
       <div class="note-group" *ngFor="let group of noteGroups">
-        <div class="group-header" (click)="toggleGroup(group)" [style.border-left-color]="group.color">
+        <div class="group-header" (click)="toggleGroup(group)">
            <div class="group-title">
              <span class="color-dot-indicator" [style.background]="group.color"></span>
              <span>{{ group.count }} notas</span>
@@ -25,36 +24,27 @@
         </div>
 
         <div class="deck-container" *ngIf="group.isOpen" (wheel)="onDeckWheel($event, group)">
-           
            <div 
              class="deck-card" 
              appTiltCard
              *ngFor="let note of group.notes; let i = index" 
              (click)="openNote(note)"
-             
              [class.active]="i === group.activeIndex"
-             
              [class.prev]="group.count > 1 && i === (group.activeIndex - 1 + group.count) % group.count"
-             
              [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
-             
              [style.background]="getCardBackground(note.cor || '#fff')"
              [style.border-left-color]="note.cor || '#ccc'"
-             [class.urgent-card]="isUrgent(note)"
            >
               <div class="card-content">
                   <div class="card-top-row">
                       <div class="note-title">{{ note.titulo || 'Sem Título' }}</div>
-                      <div *ngIf="note.dataLembrete" class="reminder-badge" [class.expired]="isExpired(note)">
-                           {{ isExpired(note) ? '⚠️' : '⏰' }}
-                      </div>
                   </div>
                   <div class="note-preview">{{ getPreview(note) }}</div>
                   
                   <div class="card-bottom">
                       <span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span>
                       <div class="scroll-hint" *ngIf="group.count > 1 && i === group.activeIndex">
-                          <span style="font-size: 1.2rem;">↕</span>
+                          <span>↕</span>
                       </div>
                   </div>
               </div>
@@ -63,51 +53,77 @@
                  <button class="btn-mini-action btn-trash" (click)="deleteFromSidebar($event, note)" title="Excluir">🗑</button>
               </div>
            </div>
-           
-           <div *ngIf="group.notes.length === 0" class="empty-group" style="padding: 1rem; color: #999;">Vazio</div>
         </div>
       </div>
-      
       <div style="height: 50px;"></div>
     </div>
   </aside>
 
   <main class="main-content">
-    <div *ngIf="openNotes.length === 0" class="welcome-screen">
-      <h1>Olá, {{ userName }}! 👋</h1>
-      <p>Você tem <b>{{ totalNotes }}</b> notas criadas.</p>
-      <button class="btn-big-create" (click)="createNote()">+ Criar Nova Nota</button>
-      <div class="scratchpad-wrapper">
-        <div class="scratchpad-header">📌 Rascunho Rápido</div>
-        <textarea [(ngModel)]="scratchpadContent" (input)="onScratchpadChange()" class="scratch-input" placeholder="Anote algo rápido..."></textarea>
-      </div>
-    </div>
+    <div class="workspace-scroll">
+      
+      <div class="welcome-screen">
+        <button class="btn-big-create" (click)="createNote()">+ Criar Nova Nota</button>
 
-    <div class="notes-grid">
-        <div *ngFor="let openNote of openNotes; let i = index" class="sticky-note-container">
-            <div class="postit-card" [style.border-top]="'6px solid ' + (openNote.cor || '#ccc')">
-                <div class="postit-header">
-                    <input [(ngModel)]="openNote.titulo" placeholder="Título..." class="postit-title-input">
-                    <div class="header-icons-row">
-                        <button class="btn-icon clock" (click)="toggleDateEdit(openNote)" [class.active]="openNote.dataLembrete">⏰</button>
-                        <button class="btn-icon close" (click)="closeNote(i)">✖</button>
-                    </div>
-                </div>
-                <div class="postit-meta" *ngIf="openNote.isDateEditing">
-                    <label class="date-label">Data:<input type="datetime-local" [ngModel]="openNote.dataLembrete" (ngModelChange)="updateReminderDate(openNote, $event)" class="date-input"></label>
-                </div>
-                <textarea [(ngModel)]="openNote.conteudo" class="postit-content-editable" placeholder="Escreva sua nota..."></textarea>
-                <div class="postit-footer">
-                    <div class="colors-row">
-                        <div *ngFor="let color of availableColors" class="color-circle" [style.background]="color" [class.selected]="openNote.cor === color" (click)="changeNoteColor(openNote, color)"></div>
-                    </div>
-                    <div class="footer-btns">
-                        <button class="btn-mini save" (click)="saveNote(openNote)">💾</button>
-                        <button class="btn-icon-trash" (click)="deleteNote(openNote, i)">🗑</button>
-                    </div>
-                </div>
-            </div>
+        <h1>Olá, {{ userName }}! 👋</h1>
+        <p>Você tem <b>{{ totalNotes }}</b> notas criadas.</p>
+      </div>
+
+      <div class="notes-grid" *ngIf="openNotes.length > 0">
+          <div *ngFor="let openNote of openNotes; let i = index" class="postit-card" [style.border-top]="'6px solid ' + (openNote.cor || '#ccc')">
+              
+              <div class="postit-header">
+                  <input [(ngModel)]="openNote.titulo" placeholder="Título..." class="postit-title-input">
+                  <div class="header-icons-row">
+                      <button class="btn-icon" 
+                              (click)="toggleDateEdit(openNote)" 
+                              [class.active]="openNote.dataLembrete"
+                              title="Definir Lembrete">
+                        ⏰
+                      </button>
+                      <button class="btn-icon" (click)="closeNote(i)" title="Fechar Card">✖</button>
+                  </div>
+              </div>
+
+              <div class="postit-meta" *ngIf="openNote.isDateEditing">
+                  <label class="date-label">Data:
+                    <input type="datetime-local" 
+                           [ngModel]="openNote.dataLembrete" 
+                           (ngModelChange)="updateReminderDate(openNote, $event)" 
+                           class="date-input">
+                  </label>
+              </div>
+
+              <textarea [(ngModel)]="openNote.conteudo" class="postit-content-editable" placeholder="Escreva sua nota..."></textarea>
+              
+              <div class="postit-footer">
+                  <div class="colors-row">
+                      <div *ngFor="let color of availableColors" 
+                           class="color-circle" 
+                           [style.background]="color" 
+                           [class.selected]="openNote.cor === color" 
+                           (click)="changeNoteColor(openNote, color)">
+                      </div>
+                  </div>
+                  <div class="footer-btns">
+                      <button class="btn-icon-trash" (click)="deleteNote(openNote, i)" title="Excluir Nota">
+                        🗑️
+                      </button>
+                      <button class="btn-mini save" (click)="saveNote(openNote)" title="Salvar Alterações">
+                        <span>💾</span> Salvar
+                      </button>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <div class="scratchpad-section">
+        <div class="scratchpad-wrapper">
+          <div class="scratchpad-header">📌 Rascunho Rápido</div>
+          <textarea [(ngModel)]="scratchpadContent" (input)="onScratchpadChange()" class="scratch-input" placeholder="Anote algo rápido..."></textarea>
         </div>
+      </div>
+
     </div>
   </main>
 </div>
@@ -118,6 +134,7 @@
       <div class="modal-icon pulsing">🚨</div>
       <h2>Atenção! {{ criticalNotes.length }} Tarefa(s)</h2>
     </div>
+    
     <div class="urgent-list">
       <div *ngFor="let note of criticalNotes" class="urgent-item">
         <div class="urgent-info">
@@ -127,10 +144,12 @@
         <button class="btn-check-mini" (click)="markAsDone(note)">✅</button>
       </div>
     </div>
+    
     <div class="modal-actions">
       <button class="btn-modal btn-success" (click)="markAsDone()">Concluir Todas</button>
       <button class="btn-modal btn-warning" (click)="snoozeTask()">Reagendar</button>
     </div>
+    
     <button class="btn-link-close" (click)="snoozeTask()">Fechar</button>
   </div>
 </div>

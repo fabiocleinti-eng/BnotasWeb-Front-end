@@ -1,197 +1,376 @@
 /* =========================================
-   1. LAYOUT GERAL
+   1. LAYOUT DE TELA CHEIA (CONGELA HEADER E SIDEBAR)
    ========================================= */
-.dashboard-container {
+html, body {
+  height: 100%;
+  margin: 0;
   padding: 0;
-  min-height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  display: flex;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f8f9fa;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.main-content {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2rem;
   background-color: #f8f9fa;
 }
 
-/* SIDEBAR FIXA */
-.sidebar {
-  width: 280px;
-  background: #fff;
-  border-right: 1px solid #eee;
-  position: fixed;
-  left: 0;
-  top: 70px;
-  height: calc(100vh - 70px);
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden; 
-}
-
-/* CONTEÚDO PRINCIPAL */
-.main-content {
-  margin-left: 280px;
-  padding: 2rem;
-  margin-top: 70px;
-  width: calc(100% - 280px);
-  min-height: calc(100vh - 70px);
-}
-
 /* =========================================
-   2. ESTRUTURA INTERNA
+   2. ESTRUTURA INTERNA DA SIDEBAR
    ========================================= */
 .sidebar-header-wrapper {
-    padding: 0.5rem 1rem; /* Padding reduzido para ganhar espaço */
-    background: #fff;
-    flex-shrink: 0;
-    z-index: 60;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  padding: 1rem 1rem;
+  background: #fff;
+  flex-shrink: 0;
+  z-index: 60;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .sidebar-list-scroll {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden; 
-    padding: 0 1rem 1rem 1rem;
-    scroll-behavior: smooth;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1rem 1rem 1rem;
 }
+
 .sidebar-list-scroll::-webkit-scrollbar { display: none; }
 
 /* =========================================
-   3. ESTILOS DA ROLETA (CORRIGIDO PARA APARECER)
+   3. ESTILOS DA ROLETA (DECK 3D)
    ========================================= */
-.note-group { margin-bottom: 0.5rem; /* Reduzi muito o espaço entre grupos */ }
+.note-group { margin-bottom: 0.5rem; }
 
 .group-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 0.4rem 0.5rem; 
-  cursor: pointer; border-radius: 6px;
-  background: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 5px;
+  padding: 0.4rem 0.5rem; cursor: pointer; border-radius: 6px;
+  background: #fff; border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px !important;
 }
+
 .group-title { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #555; }
 .color-dot-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .arrow-icon { font-size: 0.7rem; color: #999; }
 
-/* CONTAINER DO DECK - Altura fixa controlada */
 .deck-container {
-  position: relative;
-  width: 100%;
-  height: 160px; /* Altura fixa para não empurrar demais o próximo grupo */
-  perspective: 1000px;
-  margin-bottom: 5px;
-  display: block; 
-  overflow: visible; /* IMPORTANTE: Deixa os cards "vazarem" um pouco */
+  position: relative; width: 100%; height: 160px; perspective: 1000px;
+  margin-bottom: 5px; display: block; overflow: visible; padding-top: 10px !important;
 }
 
-/* CARD BASE */
 .deck-card {
-  position: absolute;
-  top: 10px; 
-  left: 0; 
-  width: 100%; 
-  height: auto;
-  min-height: 120px; 
-  
-  background: white;
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  box-sizing: border-box;
-  border-left: 4px solid #ccc;
-  
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  
-  /* Estado Padrão: Escondido no fundo */
-  opacity: 0;
-  transform: scale(0.8) translateY(0);
-  z-index: 0;
-  pointer-events: none;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  position: absolute; top: 10px; left: 0; width: 100%; min-height: 120px;
+  background: white; border-radius: 12px; padding: 0.8rem 1rem; box-sizing: border-box;
+  border-left: 4px solid #ccc; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0; transform: scale(0.8) translateY(0); z-index: 0; pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* --- ESTADOS VISUAIS (AQUI ESTÁ A MÁGICA) --- */
-
-/* 1. ATIVO (FRENTE) */
 .deck-card.active {
-  opacity: 1 !important;
-  transform: translateY(0) scale(1) !important;
-  z-index: 20 !important;
-  pointer-events: auto;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
-  display: block;
+  opacity: 1 !important; transform: translateY(0) scale(1) !important;
+  z-index: 20 !important; pointer-events: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); display: block;
 }
+.deck-card.next { opacity: 0.7 !important; transform: translateY(35px) scale(0.95) !important; z-index: 10; display: block; }
+.deck-card.prev { opacity: 0.5 !important; transform: translateY(-35px) scale(0.9) !important; z-index: 5; display: block; }
 
-/* 2. PRÓXIMO (EMBAIXO - ESPERANDO) */
-.deck-card.next {
-  opacity: 0.7 !important; /* Mais visível */
-  /* Desloca 35px para baixo (aparece a ponta) e diminui escala */
-  transform: translateY(35px) scale(0.95) !important; 
-  z-index: 10;
-  display: block;
-  filter: brightness(0.95);
-}
-
-/* 3. ANTERIOR (EM CIMA - SAINDO) */
-.deck-card.prev {
-  opacity: 0.5 !important; /* Mais visível */
-  /* Desloca -35px para cima (aparece o topo) e diminui escala */
-  transform: translateY(-35px) scale(0.9) !important; 
-  z-index: 5;
-  display: block;
-}
-
-/* Conteúdo Interno */
 .card-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
 .note-title { font-weight: 700; color: #333; font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
 .note-preview { font-size: 0.75rem; color: #777; margin-bottom: 0.5rem; line-height: 1.3; height: 32px; overflow: hidden; }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
 .note-date { font-size: 0.7rem; color: #aaa; }
-.scroll-hint { font-size: 0.8rem; color: #ccc; cursor: help; }
+.scroll-hint { font-size: 0.8rem; color: #ccc; cursor: help; animation: bounce 2s infinite; }
 
-.reminder-badge { font-size: 0.8rem; }
-.card-actions { position: absolute; bottom: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
-.deck-card.active:hover .card-actions { opacity: 1; }
+@keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-3px); } 60% { transform: translateY(-2px); } }
 
 .btn-mini-action { background: #fff; border: 1px solid #eee; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .btn-trash:hover { background: #ffebee; color: red; border-color: red; }
 
-/* Mantidos */
+/* =========================================
+   4. COMPONENTES GERAIS DA SIDEBAR
+   ========================================= */
 .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .sidebar-header h2 { font-size: 1.1rem; font-weight: 800; color: #333; margin: 0; }
 .btn-new { background: #6200ea; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.search-box { margin-bottom: 0.5rem; width: 100%; }
 .search-input { width: 100%; box-sizing: border-box; padding: 0.6rem 1rem; border: 1px solid #eee; border-radius: 20px; background: #f8f9fa; outline: none; font-size: 0.9rem; }
-.urgent-card { border: 2px solid #ff4444 !important; }
 
-/* Main Content Styles (Mantido) */
-.welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; text-align: center; color: #555; }
-.welcome-screen h1 { font-size: 2.5rem; color: #333; margin-bottom: 0.5rem; }
-.btn-big-create { background: #6200ea; color: white; padding: 1rem 2rem; border: none; border-radius: 50px; font-size: 1.2rem; cursor: pointer; margin: 2rem 0; box-shadow: 0 4px 15px rgba(98, 0, 234, 0.3); }
-.scratchpad-wrapper { background: #fff9c4; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; width: 100%; max-width: 400px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); transform: rotate(-2deg); }
-.scratchpad-header { font-weight: bold; margin-bottom: 0.5rem; color: #fbc02d; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
-.scratch-input { width: 100%; height: 100px; border: none; background: transparent; resize: none; outline: none; font-family: 'Segoe UI', cursive; font-size: 1.1rem; color: #333; }
-.notes-grid { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
-.postit-card { background: #fff; width: 320px; min-height: 320px; padding: 1.5rem; box-shadow: 5px 5px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; margin: 10px; transition: transform 0.2s, z-index 0s; position: relative; border-radius: 2px 2px 15px 2px; }
-.postit-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
-.postit-title-input { width: 70%; border: none; font-weight: bold; font-size: 1.3rem; background: transparent; outline: none; border-bottom: 2px solid transparent; }
+/* =========================================
+   5. ÁREA PRINCIPAL (WORKSPACE)
+   ========================================= */
+
+/* Saudação: Aumentei o espaço no topo para não bater no botão */
+.welcome-screen {
+  display: block; 
+  text-align: center;
+  padding: 5rem 0 0 0; /* AUMENTADO: Empurra o texto para baixo */
+  width: 100%;
+  pointer-events: auto;
+  color: #555;
+  position: relative;
+}
+
+.welcome-screen h1 { font-size: 2.2rem; color: #333; margin-bottom: 0.2rem; }
+.welcome-screen p { font-size: 1rem; margin-bottom: 1.5rem; }
+
+/* Botão de Criar: Posicionado no canto com margem de segurança */
+.btn-big-create {
+  position: absolute;
+  top: 20px;   /* Mais espaçado do topo */
+  right: 30px; /* Mais espaçado da direita */
+  background: #6200ea;
+  color: white;
+  padding: 0.8rem 1.8rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(98, 0, 234, 0.2);
+  transition: transform 0.2s;
+  z-index: 20; /* Garante que fique sobre tudo */
+}
+.btn-big-create:hover { transform: scale(1.05); }
+
+/* Grid de Notas (Meio) */
+.notes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 0 2rem 0;
+}
+
+/* CARD POST-IT (Estilo Original) */
+.postit-card {
+  background: #fff;
+  flex: 1 1 320px;
+  max-width: 380px;
+  min-height: 350px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+  position: relative;
+  border-radius: 4px 4px 20px 4px;
+  transition: transform 0.2s;
+}
+
+/* Regra para Card Único (Limite 600px) */
+.notes-grid:has(> .postit-card:only-child) .postit-card {
+  max-width: 600px !important;
+  flex: 0 1 600px !important;
+  width: 100%;
+}
+
+/* Componentes internos do Post-it */
+.postit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.postit-title-input { width: 70%; border: none; font-weight: 800; font-size: 1.3rem; background: transparent; outline: none; color: #333; border-bottom: 2px solid rgba(0,0,0,0.05); padding: 5px 0; }
+.postit-title-input:focus { border-bottom-color: #6200ea; }
+
+/* Ícones de Header */
 .header-icons-row { display: flex; gap: 5px; }
-.btn-icon { background: none; border: none; cursor: pointer; font-size: 1.2rem; opacity: 0.6; transition: opacity 0.2s; }
-.postit-meta { background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem; }
-.date-label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #666; }
-.date-input { border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-family: inherit; }
-.postit-content-editable { flex: 1; border: none; background: transparent; resize: none; font-family: 'Segoe UI', sans-serif; font-size: 1rem; line-height: 1.6; outline: none; min-height: 150px; }
-.postit-footer { margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.5rem; }
-.colors-row { display: flex; gap: 5px; }
-.color-circle { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
-.footer-btns { display: flex; gap: 8px; }
-.btn-mini { padding: 0.3rem 0.8rem; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; }
-.btn-mini.save { background: #333; color: white; }
-.btn-icon-trash { background: none; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.5; }
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px); }
-.modal-content.atencao-maxima { background: white; padding: 2rem; border-radius: 20px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 4px solid #ff5252; animation: modal-pop 0.3s ease-out; }
-.modal-header-alert h2 { color: #d32f2f; margin: 0.5rem 0; }
-.pulsing { font-size: 3rem; animation: pulse-red 1.5s infinite; }
-.urgent-list { width: 100%; max-height: 250px; overflow-y: auto; margin: 1.5rem 0; background: #fff; border-radius: 12px; padding: 0.5rem; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
-.urgent-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #ff4444; border-right: 1px solid #eee; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
-.urgent-info { display: flex; flex-direction: column; text-align: left; }
-.urgent-time { font-size: 0.8rem; color: #666; margin-top: 2px; }
-.btn-check-mini { background: #f0f0f0; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-.modal-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
-.btn-modal { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
-.btn-success { background: #4caf50; color: white; }
-.btn-warning { background: #ff9800; color: white; }
-.btn-link-close { background: none; border: none; color: #666; margin-top: 1rem; cursor: pointer; text-decoration: underline; }
+.btn-icon { background: transparent; border: 1px solid transparent; cursor: pointer; font-size: 1.1rem; border-radius: 4px; padding: 2px 6px; transition: 0.2s; }
+.btn-icon:hover { background-color: rgba(0,0,0,0.05); }
+.btn-icon.active { background-color: #e6fffa; color: #009688; border: 1px solid #009688; }
+
+/* Área de Data */
+.postit-meta { background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px; margin-bottom: 10px; border: 1px dashed #ddd; }
+.date-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; }
+.date-input { border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; font-family: inherit; font-size: 0.9rem; outline: none; background: #fff; }
+
+/* Conteúdo */
+.postit-content-editable { flex: 1; border: none; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; resize: none; font-family: 'Segoe UI', sans-serif; font-size: 1rem; line-height: 1.6; outline: none; min-height: 150px; color: #444; }
+
+/* Footer */
+.postit-footer { margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px; }
+.footer-btns { display: flex; align-items: center; gap: 12px; }
+
+.btn-mini.save { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.btn-icon-trash { background: #fff1f0; border: 1px solid #ffa39e; color: #f5222d; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.colors-row { display: flex; gap: 8px; }
+.color-circle { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); }
+
+/* Rascunho Rápido (Final) */
+.scratchpad-section {
+  display: flex; flex-direction: column; align-items: center; width: 100%; padding-bottom: 4rem;
+}
+
+.scratchpad-wrapper {
+  background: #fff9c4;
+  padding: 1.5rem;
+  border-radius: 4px 4px 15px 4px;
+  width: 380px; 
+  min-height: 180px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+  transform: rotate(-1deg);
+  margin: 1.5rem auto 1rem auto;
+  display: flex; flex-direction: column; text-align: left;
+}
+
+.scratchpad-header { font-weight: bold; margin-bottom: 0.8rem; color: #fbc02d; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+.scratch-input { width: 100%; flex: 1; border: none; background: transparent; resize: none; outline: none; font-family: 'Segoe UI', cursive; font-size: 1.1rem; color: #333; }
+/* =========================================
+   6. MODAL E ALERTAS (ESTILO MODERNO)
+   ========================================= */
+
+/* Fundo escuro com desfoque */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Escurece o fundo */
+  backdrop-filter: blur(5px);      /* Desfoque elegante */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+/* A Caixa do Alerta */
+.modal-content.atencao-maxima {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  border: none;
+  border-top: 8px solid #ff5252; /* Topo vermelho indicando urgência */
+  position: relative;
+}
+
+/* Cabeçalho do Alerta (Ícone e Título) */
+.modal-header-alert { margin-bottom: 1.5rem; }
+
+.modal-icon.pulsing {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  animation: pulse-alert 1.2s infinite; /* Animação de pulsar */
+}
+
+.modal-header-alert h2 {
+  font-size: 1.6rem;
+  color: #333;
+  margin: 0;
+  font-weight: 800;
+}
+
+/* Lista de Tarefas Urgentes */
+.urgent-list {
+  background: #fff5f5; /* Fundo vermelho bem clarinho */
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ffebee;
+}
+
+.urgent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  border-left: 4px solid #ff5252; /* Indicador lateral vermelho */
+}
+
+.urgent-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.urgent-info strong { font-size: 1rem; color: #333; }
+.urgent-time { font-size: 0.8rem; color: #ff5252; font-weight: 700; margin-top: 2px; }
+
+/* Botão de Check Individual (Verde) */
+.btn-check-mini {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+.btn-check-mini:hover { background: #2e7d32; color: white; transform: scale(1.1); }
+
+/* Área de Botões (Rodapé) */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.btn-modal {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: white;
+}
+.btn-modal:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+.btn-success { background: #4caf50; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+.btn-warning { background: #ff9800; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); }
+
+/* Link Fechar discreto */
+.btn-link-close {
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.btn-link-close:hover { color: #666; }
+
+/* Animações */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse-alert { 
+  0% { transform: scale(1); } 
+  50% { transform: scale(1.1); } 
+  100% { transform: scale(1); } 
+}
