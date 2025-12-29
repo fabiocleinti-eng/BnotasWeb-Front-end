@@ -3,7 +3,6 @@
 Um gerenciador de notas adesivas (sticky notes) inteligente, desenvolvido com **Angular 16+ (Standalone Components)**. O projeto apresenta um editor de texto rico (WYSIWYG) customizado, com controle granular de estilização e manipulação avançada do DOM.
 
 ![Preview do Projeto](./gifprojeto.gif)
-*(Sugestão: Adicione um GIF ou print na raiz do projeto com o nome preview-screenshot.png)*
 
 > 🚧 **Status do Projeto: Em Evolução Contínua** > Este projeto encontra-se em **desenvolvimento ativo**. O objetivo é modernizar e simplificar constantemente a experiência do usuário. Embora novas funcionalidades estejam sendo desenhadas para facilitar ainda mais o dia a dia, **todos os recursos listados abaixo estão 100% testados, estáveis e aptos para uso.**
 
