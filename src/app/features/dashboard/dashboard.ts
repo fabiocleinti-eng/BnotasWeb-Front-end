@@ -123,7 +123,7 @@ export class DashboardComponent implements OnInit {
       }
   }
 
-  // --- CHECK STATUS ATUALIZADO (LÊ A COR DO NAVEGADOR) ---
+  // --- CHECK STATUS ATUALIZADO ---
   checkToolbarStatus() {
     setTimeout(() => {
         if (this.skipNextStatusCheck) {
@@ -134,7 +134,7 @@ export class DashboardComponent implements OnInit {
         const doc = document;
         const selection = window.getSelection();
         
-        if (selection && !selection.isCollapsed) { // Ou isCollapsed, queremos checar sempre
+        if (selection && !selection.isCollapsed) { 
              // 1. Estilos Básicos
              this.desiredState.bold = doc.queryCommandState('bold');
              this.desiredState.italic = doc.queryCommandState('italic');
@@ -175,7 +175,7 @@ export class DashboardComponent implements OnInit {
       this.syncUiFromState();
   }
 
-  // --- HELPERS (NOVOS: PARA ATUALIZAR OS BOTÕES) ---
+  // --- HELPERS ---
   mapBrowserSizeToApp(val: string): string {
       if (!val) return 'medium';
       if (val === '7') return 'large';
@@ -199,72 +199,77 @@ export class DashboardComponent implements OnInit {
       return `#${r}${g}${b}`;
   }
 
-  // --- FORMAT ---
+  // --- FORMAT (COM TIMEOUT PARA CORRIGIR FOCO) ---
   format(command: string, value: string) {
     this.restoreSelection();
     this.skipNextStatusCheck = true; 
 
-    // Atualiza Intenção
+    // Atualiza Intenção Imediatamente (Visual)
     if (command === 'bold') this.desiredState.bold = !this.desiredState.bold;
     if (command === 'italic') this.desiredState.italic = !this.desiredState.italic;
     if (command === 'underline') this.desiredState.underline = !this.desiredState.underline;
     if (command === 'foreColor') this.desiredState.foreColor = value;
 
-    if (command === 'backColor') {
-        if (value === 'transparent') {
-             this.desiredState.highlight = false;
-             this.desiredState.highlightColor = 'transparent';
-             this.showHighlightMenu = false;
-             this.syncUiFromState();
-             
-             this.performEscape('highlight'); 
-             this.saveSelection();
-             return; 
-        } else {
-            this.desiredState.highlight = true;
-            this.desiredState.highlightColor = value;
+    // Timeout para garantir que o foco volte ao editor após clicar no menu
+    setTimeout(() => {
+        this.restoreSelection(); // Recupera o foco perdido para o botão/input
+
+        if (command === 'backColor') {
+            if (value === 'transparent') {
+                this.desiredState.highlight = false;
+                this.desiredState.highlightColor = 'transparent';
+                this.showHighlightMenu = false;
+                this.syncUiFromState();
+                
+                this.performEscape('highlight'); 
+                this.saveSelection();
+                return; 
+            } else {
+                this.desiredState.highlight = true;
+                this.desiredState.highlightColor = value;
+            }
+            this.showHighlightMenu = false;
         }
-        this.showHighlightMenu = false;
-    }
 
-    this.syncUiFromState();
+        this.syncUiFromState();
 
-    const selection = window.getSelection();
-    const isCollapsed = selection && selection.isCollapsed;
+        const selection = window.getSelection();
+        const isCollapsed = selection && selection.isCollapsed;
 
-    // Fuga Física para B/I/U se estiver desligando
-    if (isCollapsed) {
-        if (command === 'bold' && !this.desiredState.bold) { this.escapeSpecificTag(['B', 'STRONG']); this.saveSelection(); return; }
-        if (command === 'italic' && !this.desiredState.italic) { this.escapeSpecificTag(['I', 'EM']); this.saveSelection(); return; }
-        if (command === 'underline' && !this.desiredState.underline) { this.escapeSpecificTag(['U']); this.saveSelection(); return; }
-    }
+        // Fuga Física para B/I/U se estiver desligando
+        if (isCollapsed) {
+            if (command === 'bold' && !this.desiredState.bold) { this.escapeSpecificTag(['B', 'STRONG']); this.saveSelection(); return; }
+            if (command === 'italic' && !this.desiredState.italic) { this.escapeSpecificTag(['I', 'EM']); this.saveSelection(); return; }
+            if (command === 'underline' && !this.desiredState.underline) { this.escapeSpecificTag(['U']); this.saveSelection(); return; }
+        }
 
-    // --- CORREÇÃO DE COR DA LETRA (Início Absoluto) ---
-    if (command === 'foreColor' && isCollapsed) {
-        this.applyStyleAtCursor('color', value);
+        // --- CORREÇÃO DE COR DA LETRA (Início Absoluto) ---
+        if (command === 'foreColor' && isCollapsed) {
+            this.applyStyleAtCursor('color', value);
+            this.saveSelection();
+            return;
+        }
+
+        // Marca-Texto em cursor parado
+        if (command === 'backColor' && isCollapsed && value !== 'transparent') {
+            this.applyStyleAtCursor('backgroundColor', value);
+            this.saveSelection();
+            return;
+        }
+
+        // Execução Padrão
+        if (command === 'backColor' || command === 'foreColor') {
+            document.execCommand('styleWithCSS', false, 'true');
+        } else {
+            document.execCommand('styleWithCSS', false, 'false');
+        }
+        document.execCommand(command, false, value);
+        
         this.saveSelection();
-        return;
-    }
-
-    // Marca-Texto em cursor parado
-    if (command === 'backColor' && isCollapsed && value !== 'transparent') {
-        this.applyStyleAtCursor('backgroundColor', value);
-        this.saveSelection();
-        return;
-    }
-
-    // Execução Padrão
-    if (command === 'backColor' || command === 'foreColor') {
-        document.execCommand('styleWithCSS', false, 'true');
-    } else {
-        document.execCommand('styleWithCSS', false, 'false');
-    }
-    document.execCommand(command, false, value);
-    
-    this.saveSelection();
+    }, 10); // 10ms é o suficiente para o navegador processar a troca de foco
   }
 
-  // --- SET FONT SIZE (Versão Blindada para Início) ---
+  // --- SET FONT SIZE (COM TIMEOUT PARA CORRIGIR SELECT) ---
   setFontSize(size: string) {
     this.restoreSelection();
     this.skipNextStatusCheck = true;
@@ -273,34 +278,37 @@ export class DashboardComponent implements OnInit {
     const sizeMap: any = { small: '13px', medium: '16px', large: '24px' };
     const cssSize = sizeMap[size];
 
-    const selection = window.getSelection();
-    
-    // 1. Cursor Parado -> FORÇA SPAN
-    if (selection && selection.isCollapsed) {
-        this.applyStyleAtCursor('fontSize', cssSize);
-    } 
-    // 2. Texto Selecionado
-    else {
-        document.execCommand('styleWithCSS', false, 'false');
-        document.execCommand('fontSize', false, '7');
-        const fontElements = document.getElementsByTagName('font');
-        for (let i = fontElements.length - 1; i >= 0; i--) {
-            const font = fontElements[i];
-            if (font.getAttribute('size') === '7') {
-                const span = document.createElement('span');
-                span.style.fontSize = cssSize;
-                while (font.firstChild) { span.appendChild(font.firstChild); }
-                if (font.parentNode) {
-                    font.parentNode.replaceChild(span, font);
-                    const range = document.createRange();
-                    range.selectNodeContents(span);
-                    selection?.removeAllRanges();
-                    selection?.addRange(range);
+    setTimeout(() => {
+        this.restoreSelection(); // Garante foco de volta
+        const selection = window.getSelection();
+        
+        // 1. Cursor Parado -> FORÇA SPAN
+        if (selection && selection.isCollapsed) {
+            this.applyStyleAtCursor('fontSize', cssSize);
+        } 
+        // 2. Texto Selecionado
+        else {
+            document.execCommand('styleWithCSS', false, 'false');
+            document.execCommand('fontSize', false, '7');
+            const fontElements = document.getElementsByTagName('font');
+            for (let i = fontElements.length - 1; i >= 0; i--) {
+                const font = fontElements[i];
+                if (font.getAttribute('size') === '7') {
+                    const span = document.createElement('span');
+                    span.style.fontSize = cssSize;
+                    while (font.firstChild) { span.appendChild(font.firstChild); }
+                    if (font.parentNode) {
+                        font.parentNode.replaceChild(span, font);
+                        const range = document.createRange();
+                        range.selectNodeContents(span);
+                        selection?.removeAllRanges();
+                        selection?.addRange(range);
+                    }
                 }
             }
         }
-    }
-    this.saveSelection();
+        this.saveSelection();
+    }, 10);
   }
 
   // --- FUNÇÕES DE AUXÍLIO E FUGA ---

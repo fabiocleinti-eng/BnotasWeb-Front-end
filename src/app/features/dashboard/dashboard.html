@@ -94,7 +94,7 @@
                             [style.color]="desiredState.foreColor">
                         A
                       </span>
-                      <input type="color" [value]="desiredState.foreColor" (change)="format('foreColor', $any($event.target).value)" (mousedown)="onToolbarMouseDown($event)" class="color-picker-tool">
+                      <input type="color" [value]="desiredState.foreColor" (input)="format('foreColor', $any($event.target).value)" (mousedown)="onToolbarMouseDown($event)" class="color-picker-tool">
                   </div>
 
                   <div class="vertical-separator"></div>

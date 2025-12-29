@@ -1,95 +1,86 @@
-# BnotaswebFrontend
+# 📝 BnotasWeb
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.8.
+Um gerenciador de notas adesivas (sticky notes) inteligente, desenvolvido com **Angular 16+ (Standalone Components)**. O projeto apresenta um editor de texto rico (WYSIWYG) customizado, com controle granular de estilização e manipulação avançada do DOM.
 
-## Development server
+![Preview do Projeto](./gifprojeto.gif)
+*(Sugestão: Adicione um GIF ou print na raiz do projeto com o nome preview-screenshot.png)*
 
-To start a local development server, run:
+> 🚧 **Status do Projeto: Em Evolução Contínua** > Este projeto encontra-se em **desenvolvimento ativo**. O objetivo é modernizar e simplificar constantemente a experiência do usuário. Embora novas funcionalidades estejam sendo desenhadas para facilitar ainda mais o dia a dia, **todos os recursos listados abaixo estão 100% testados, estáveis e aptos para uso.**
 
-```bash
-ng serve
-```
+## 🚀 Visão Geral
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Este projeto é uma **Single Page Application (SPA)** focada em produtividade. O grande diferencial técnico reside na **implementação manual da lógica de edição de texto**. Em vez de depender apenas de bibliotecas prontas, foi desenvolvida uma engine própria sobre o `contenteditable` para contornar limitações nativas dos navegadores, garantindo persistência de estilos complexos e uma experiência de usuário fluida.
 
-## Code scaffolding
+## ✨ Funcionalidades Detalhadas (Versão Estável)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+O BnotasWeb vai além de simples anotações, funcionando como um sistema completo de organização pessoal. As funcionalidades abaixo estão operacionais:
 
-```bash
-ng generate component component-name
-```
+### 1. 🎨 Editor de Texto Rico (Custom Engine)
+* **Formatação Essencial:** Negrito, Itálico e Sublinhado com lógica de "fuga" para não prender o cursor.
+* **Marca-Texto Inteligente:** Cores de fundo dinâmicas com função de parada.
+* **Tipografia Controlada:** Alteração de tamanho (Pequeno, Médio, Grande) e cor da fonte com feedback visual instantâneo na barra de ferramentas.
+* **Reset (Tx):** Botão de limpeza que normaliza o texto e remove formatações aninhadas.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### 2. 🗂️ Organização & Produtividade
+* **Navegação "Deck" (Baralho):** Interface inovadora na sidebar onde o usuário usa o scroll (wheel) para rodar entre notas de um mesmo grupo de cor, economizando espaço em tela.
+* **Categorização por Cores:** As notas funcionam como pastas temáticas baseadas em suas cores.
+* **Rascunho Rápido (Scratchpad):** Uma área de transferência persistente (Local Storage) para anotações voláteis que não precisam virar um card.
+* **Busca Instantânea:** Filtro em tempo real por título ou conteúdo.
 
-```bash
-ng generate --help
-```
+### 3. ⏰ Sistema de Alertas
+* **Agendamento:** Definição de datas e horários para lembretes em cada nota.
+* **Modal de Urgência:** Interface de "Atenção Máxima" que alerta sobre tarefas vencidas.
+* **Ações Rápidas:** Opções para concluir ou adiar (Snooze) tarefas diretamente do alerta.
 
-## Building
+### 4. 👤 Gestão de Usuário
+* **Identificação:** Sistema que personaliza a interface com o nome do usuário (extraído do e-mail/auth).
+* **CRUD Completo:** Criação, leitura, atualização e exclusão de notas integradas ao Backend.
 
-To build the project run:
+## 🛠️ Destaques Técnicos & Desafios Superados
 
-```bash
-ng build
-```
+Este é o ponto alto do projeto para avaliação técnica. O desenvolvimento exigiu domínio sobre a API de **Selection** e **Range** do navegador:
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+1.  **Persistência de Estilo (Cursor Tracking):**
+    * *Desafio:* Navegadores tendem a resetar a formatação (cor/tamanho) para o padrão ao pular uma linha ou mover o cursor para o início de um bloco.
+    * *Solução:* Implementação da técnica **"Zero Width Space Injection" (\u200B)**. O código injeta spans invisíveis com o estilo desejado e força o cursor para dentro deles, garantindo que a escolha do usuário (ex: letra grande e vermelha) persista mesmo em novas linhas.
 
-## Running unit tests
+2.  **Lógica de "Fuga" Recursiva:**
+    * *Desafio:* Ficar "preso" dentro de tags como `<u>` ou `<span style="background...">` ao tentar desligar um estilo.
+    * *Solução:* Algoritmos (`performEscape`, `escapeSpecificTag`) que analisam a árvore do DOM a partir do cursor, encontram o nó pai estilizado e movem fisicamente o `Range` para fora dele.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+3.  **Sincronização UI/Estado (Two-way binding visual):**
+    * A barra de ferramentas lê dinamicamente o `Computed Style` na posição do cursor. Se você clica em um texto vermelho, o botão de cor na toolbar atualiza automaticamente para vermelho.
 
-```bash
-ng test
-```
+4.  **UX Interativo (Tilt Effect):**
+    * Diretiva personalizada que calcula a posição do mouse relativa ao card para aplicar uma transformação 3D suave (CSS Transform), aumentando a imersão.
 
-## Running end-to-end tests
+## 💻 Tecnologias
 
-For end-to-end (e2e) testing, run:
+* **Framework:** Angular 16+ (Standalone Components)
+* **Linguagem:** TypeScript
+* **Estilização:** SCSS / CSS3 (CSS Variables, Flexbox, Grid)
+* **Core:** HTML5 `contenteditable` API, DOM Manipulation API
 
-```bash
-ng e2e
-```
+## 📦 Como Rodar o Projeto
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git](https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git)
+    ```
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
+3.  **Execute o servidor de desenvolvimento:**
+    ```bash
+    ng serve
+    ```
+4.  Acesse `http://localhost:4200/`.
 
-## Additional Resources
+## 👨‍💻 Autor
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Desenvolvido por **Fábio Clein**.
+Entre em contato: [LinkedIn](https://www.linkedin.com/in/f%C3%A1bio-clein-8aabb5325/) | fabioclein.ti@gmail.com
 
-
-## 📦 Guia de Git & GitHub
-
-Abaixo estão os comandos essenciais para subir e atualizar este projeto.
-
-### 🚀 1. Subindo o Projeto (Primeira Vez)
-Se você criou o repositório agora e precisa conectar o código local:
-
-```bash
-# 1. Inicia o Git na pasta
-git init
-
-# 2. Adiciona todos os arquivos ao controle de versão
-git add .
-
-# 3. Salva a versão inicial
-git commit -m "Commit inicial"
-
-# 4. Define a branch principal como 'main'
-git branch -M main
-
-# 5. Conecta ao repositório remoto (Substitua a URL abaixo pela do seu repo!)
-git remote add origin [https://github.com/fabiocleinti-eng/bnotasweb-frontend.git](https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git)
-
-# 6. Envia os arquivos
-git push -u origin main
-
-
-
-
-#                 AJUSTES NECESSARIOS                   
-
-
-
-
+---
+*Projeto desenvolvido para fins de estudo e demonstração de competências avançadas em Front-end Engineering.*
