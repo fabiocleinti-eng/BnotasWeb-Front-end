@@ -1,1 +1,46 @@
 /* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   FIX GLOBAL DO TIPTAP (Para vencer o encapsulamento do Angular)
+   ============================================================ */
+
+/* Alvo: Qualquer elemento editável ou classe do Tiptap */
+.ProseMirror,
+.ProseMirror-focused,
+[contenteditable] {
+    outline: none !important;       /* Remove a linha azul/preta de foco */
+    border: none !important;        /* Remove bordas sólidas */
+    box-shadow: none !important;    /* Remove sombras/brilhos externos */
+    background-color: transparent !important; /* Remove fundos indesejados */
+}
+
+/* Garante que o estado de "foco" (clicado) também obedeça */
+.ProseMirror:focus,
+.ProseMirror:focus-visible,
+[contenteditable]:focus,
+[contenteditable]:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Garante que o container do editor ocupe o espaço correto e tenha scroll */
+.postit-content-area div[tiptap],
+.ProseMirror {
+    height: 100% !important;
+    min-height: 150px;
+    overflow-y: auto !important; /* Barra de rolagem interna */
+    padding: 10px;
+}
+
+/* Removemos a borda padrão que alguns navegadores colocam em divs focáveis */
+*:focus {
+    outline: none !important;
+}
+
+/* No final do src/styles.css */
+.ProseMirror p {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.2 !important; /* Mesma altura de linha para tudo */
+}
+

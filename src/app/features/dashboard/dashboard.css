@@ -26,6 +26,7 @@ html, body {
     display: flex; 
     flex-direction: column; 
     height: 100%; 
+    z-index: 10;
 }
 
 .main-content { 
@@ -34,6 +35,8 @@ html, body {
     overflow: hidden; 
     display: flex; 
     flex-direction: column; 
+    /* Importante para o card maximizado ficar relativo a esta área */
+    position: relative; 
 }
 
 .workspace-scroll { 
@@ -84,7 +87,7 @@ html, body {
 
 .search-input { 
     width: 100%; 
-    box-sizing: border-box; /* Garante que padding não estoure largura */
+    box-sizing: border-box;
     padding: 0.6rem 1rem; 
     border: 1px solid #eee; 
     border-radius: 20px; 
@@ -288,13 +291,29 @@ html, body {
     flex-direction: column; 
     margin: 10px; 
     border-radius: 4px 4px 20px 4px; 
-    transition: 0.2s; 
+    transition: 0.2s;
+    height: 350px;
 }
 
 .notes-grid:has(> .postit-card:only-child) .postit-card { 
     max-width: 600px !important; 
     flex: 0 1 600px !important; 
     width: 100%; 
+}
+
+/* --- CLASSE PARA CARD MAXIMIZADO --- */
+.postit-card.maximized {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  z-index: 50; /* Fica acima dos outros */
+  margin: 0;
+  transform: none !important; /* Remove animações de hover */
 }
 
 .postit-header { 
@@ -390,23 +409,12 @@ html, body {
 
 .btn-tool:hover { background: #e8e8e8; }
 
-/* ESTADO ATIVO DO BOTÃO (Roxo) */
 .btn-tool.active-tool {
     background: #e8eaf6;
     border: 2px solid #6200ea;
     color: #6200ea;
     transform: scale(1.05);
     font-weight: bold;
-}
-
-.size-tool { 
-    padding: 2px; 
-    border-radius: 4px; 
-    border: 1px solid #ccc; 
-    font-size: 0.8rem; 
-    height: 28px; 
-    background: white; 
-    cursor: pointer; 
 }
 
 .vertical-separator { 
@@ -416,28 +424,11 @@ html, body {
     margin: 0 5px; 
 }
 
-/* Highlight Menu */
 .hilite-group, .color-wrapper { 
     display: flex; 
     align-items: center; 
     gap: 4px; 
     position: relative; 
-}
-
-.highlight-menu { 
-    position: absolute; 
-    top: 100%; 
-    left: 0; 
-    background: white; 
-    border: 1px solid #ccc; 
-    border-radius: 6px; 
-    padding: 8px; 
-    display: flex; 
-    gap: 5px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
-    z-index: 50; 
-    margin-top: 5px; 
-    min-width: 140px; 
 }
 
 .color-wrapper { 
@@ -453,14 +444,12 @@ html, body {
 }
 
 .color-picker-tool { 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    opacity: 0; 
-    cursor: pointer; 
-    z-index: 2; 
+    width: 25px;
+    height: 25px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
 }
 
 .btn-color-tool { 
@@ -479,35 +468,72 @@ html, body {
 }
 
 /* =========================================
-   5. EDITOR (ESTRUTURA CRÍTICA)
+   5. EDITOR (ESTRUTURA TIPTAP - BLINDADA)
    ========================================= */
-.postit-content-editable { 
-    flex: 1; 
-    border: none; 
-    background: rgba(0,0,0,0.02); 
-    padding: 10px; 
-    border-radius: 0 0 8px 8px; 
-    font-family: 'Segoe UI', sans-serif; 
-    font-size: 1rem; 
-    line-height: 1.2; 
-    white-space: pre-wrap; 
-    outline: none; 
-    min-height: 150px; 
-    color: #444; 
-    overflow-y: auto; 
+
+/* Área container que envolve o editor */
+.postit-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;           
+  background: rgba(0,0,0,0.02);
+  border-radius: 0 0 8px 8px;
+  
+  /* Remove qualquer borda do container pai */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-/* IMPORTANTE: Impede que divs e p criem blocos verticais */
-/* Isso permite mudar o tamanho da fonte no meio da linha */
-.postit-content-editable div, 
-.postit-content-editable p {
-    display: inline;
-    margin: 0; 
-    padding: 0;
+/* O elemento da diretiva e o próprio editor */
+.postit-content-area > div, 
+.ProseMirror,
+[contenteditable] {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  
+  /* Comportamento de Layout */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto !important; 
+  padding: 10px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: #444;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-.postit-content-editable span {
-    line-height: inherit;
+.ProseMirror p {
+  margin: 0; /* Remove margem dos parágrafos */
+  margin-bottom: 0px;
+}
+
+/* Garante que o estado de foco também não tenha linha */
+.ProseMirror:focus, 
+.ProseMirror-focused, 
+[contenteditable]:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Barra de rolagem sutil */
+.ProseMirror::-webkit-scrollbar {
+  width: 6px;
+}
+.ProseMirror::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+.ProseMirror::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* =========================================
