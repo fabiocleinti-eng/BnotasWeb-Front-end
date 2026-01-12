@@ -22,6 +22,7 @@
   },
   "private": true,
   "dependencies": {
+    "@angular/cdk": "^20.2.14",
     "@angular/common": "^20.3.0",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
@@ -31,6 +32,8 @@
     "@tiptap/core": "^3.14.0",
     "@tiptap/extension-color": "^3.14.0",
     "@tiptap/extension-highlight": "^3.14.0",
+    "@tiptap/extension-task-item": "^3.14.0",
+    "@tiptap/extension-task-list": "^3.14.0",
     "@tiptap/extension-text-style": "^3.14.0",
     "@tiptap/extension-underline": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",

@@ -15,7 +15,12 @@ import { HeaderComponent } from '../header/header';
     </main>
   `,
   styles: [`
-    main { padding: 20px; }
+    main { 
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
   `]
 })
 export class LayoutComponent {}

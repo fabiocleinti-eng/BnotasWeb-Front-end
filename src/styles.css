@@ -44,3 +44,127 @@
     line-height: 1.2 !important; /* Mesma altura de linha para tudo */
 }
 
+/* ============================================================
+   MODO ESCURO (Dark Mode)
+   ============================================================ */
+:root {
+    --bg-primary-light: #f5f5f5;
+    --bg-secondary-light: #ffffff;
+    --bg-card-light: #ffffff;
+    --text-primary-light: #333333;
+    --text-secondary-light: #666666;
+    --border-color-light: #e0e0e0;
+}
+
+.dark-mode,
+.dark-mode body,
+.dark-mode html {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-card: #3a3a3a;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #4a4a4a;
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Aplicar modo escuro em todo o body */
+.dark-mode body {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .dashboard-container {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-mode .sidebar {
+    background: var(--bg-secondary);
+    border-right-color: var(--border-color);
+}
+
+.dark-mode .postit-card {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.dark-mode .postit-title-input {
+    color: var(--text-primary);
+}
+
+.dark-mode .postit-content-area {
+    background: var(--bg-card) !important;
+}
+
+.dark-mode .postit-content-area .ProseMirror {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+}
+
+.dark-mode .postit-content-area .ProseMirror > * {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-mode .editor-toolbar {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+.dark-mode .btn-tool {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.dark-mode .search-input {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.dark-mode .drawer-content {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.dark-mode .drawer-input,
+.dark-mode .drawer-textarea {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.dark-mode .user-drawer {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-mode .drawer-header {
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 100%) !important;
+}
+
+.dark-mode .main-header {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+.dark-mode .notes-grid {
+    background: var(--bg-primary) !important;
+}
+
+.dark-mode .plan-card {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-mode .plan-header h5,
+.dark-mode .plan-features li {
+    color: var(--text-primary) !important;
+}
+

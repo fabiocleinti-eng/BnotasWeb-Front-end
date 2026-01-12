@@ -16,7 +16,7 @@ export class NoteService {
     return this.http.get<Note[]>(`${API_URL}/anotacoes`);
   }
 
-  createNote(note: { titulo: string; conteudo: string; favorita: boolean }): Observable<Note> {
+  createNote(note: Partial<Note>): Observable<Note> {
     return this.http.post<Note>(`${API_URL}/anotacoes`, note);
   }
 
@@ -26,5 +26,18 @@ export class NoteService {
 
   deleteNote(id: number): Observable<void> {
     return this.http.delete<void>(`${API_URL}/anotacoes/${id}`);
+  }
+
+  // Lixeira Segura
+  getTrash(): Observable<Note[]> {
+    return this.http.get<Note[]>(`${API_URL}/anotacoes/trash`);
+  }
+
+  restoreNote(id: number): Observable<Note> {
+    return this.http.post<Note>(`${API_URL}/anotacoes/${id}/restore`, {});
+  }
+
+  deletePermanently(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/anotacoes/${id}/permanent`);
   }
 }

@@ -1,150 +1,280 @@
-<div class="dashboard-container">
+<div class="dashboard-container" [class.dark-mode]="isDarkMode">
+
+    <div class="main-header">
+        <div class="header-left">
+            <button class="btn-mobile-menu mobile-only" (click)="toggleMobileSidebar()">☰</button>
+        </div>
+        <div class="header-center-logo">
+            <h1 class="app-logo">BnotasWeb</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-theme-toggle" (click)="toggleDarkMode()" [title]="isDarkMode ? 'Modo Claro' : 'Modo Escuro'">
+                {{ isDarkMode ? '☀️' : '🌙' }}
+            </button>
+            <div class="user-avatar-trigger" (click)="toggleDrawer()">
+                <img [src]="userProfile.avatarUrl" alt="User">
+            </div>
+        </div>
+    </div>
   
-  <aside class="sidebar">
-    <div class="sidebar-header-wrapper">
-        <div class="sidebar-header">
-          <h2>Minhas Notas</h2>
-          <button class="btn-new" (click)="createNote()"><span>+</span></button>
-        </div>
-        <div class="search-box">
-          <input type="text" placeholder="Buscar..." class="search-input" (input)="onSearch($event)">
-        </div>
-    </div>
-    <div class="sidebar-list-scroll">
-      <div class="note-group" *ngFor="let group of noteGroups">
-        <div class="group-header" (click)="toggleGroup(group)">
-           <div class="group-title">
-             <span class="color-dot-indicator" [style.background]="group.color"></span>
-             <span>{{ group.count }} notas</span>
-           </div>
-           <span class="arrow-icon">{{ group.isOpen ? '▼' : '▶' }}</span>
-        </div>
-        <div class="deck-container" *ngIf="group.isOpen" (wheel)="onDeckWheel($event, group)">
-           <div class="deck-card" appTiltCard *ngFor="let note of group.notes; let i = index" 
-             (click)="openNote(note)" [class.active]="i === group.activeIndex"
-             [class.prev]="group.count > 1 && i === (group.activeIndex - 1 + group.count) % group.count"
-             [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
-             [style.background]="getCardBackground(note.cor || '#fff')" [style.border-left-color]="note.cor || '#ccc'">
-              <div class="card-content">
-                  <div class="card-top-row"><div class="note-title">{{ note.titulo || 'Sem Título' }}</div></div>
-                  <div class="note-preview">{{ getPreview(note) }}</div>
-                  <div class="card-bottom"><span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span></div>
+    <div class="body-layout">
+  
+        <div class="mobile-backdrop" *ngIf="isMobileSidebarOpen" (click)="toggleMobileSidebar()"></div>
+  
+        <aside class="sidebar" [class.mobile-open]="isMobileSidebarOpen">
+          <div class="sidebar-header-wrapper">
+              <div class="sidebar-header">
+                <h2>Minhas Notas</h2>
+                <button class="btn-new" (click)="createNote()"><span>+</span></button>
               </div>
-              <div class="card-actions"><button class="btn-mini-action btn-trash" (click)="deleteFromSidebar($event, note)">🗑</button></div>
-           </div>
-        </div>
-      </div>
-      <div style="height: 50px;"></div>
-    </div>
-  </aside>
-
-  <main class="main-content">
-    <div class="workspace-scroll">
-      <div class="welcome-screen">
-        <button class="btn-big-create" (click)="createNote()">+ Criar Nova Nota</button>
-        <h1>Olá, {{ userName }}! 👋</h1>
-        <p>Você tem <b>{{ totalNotes }}</b> notas criadas.</p>
-      </div>
-
-      <div class="notes-grid" *ngIf="openNotes.length > 0">
-          <div *ngFor="let openNote of openNotes; let i = index" 
-               class="postit-card" 
-               [class.maximized]="openNote.isMaximized"
-               [style.border-top]="'6px solid ' + (openNote.cor || '#ccc')">
-              
-              <div class="postit-header">
-                  <input [(ngModel)]="openNote.titulo" placeholder="Título..." class="postit-title-input">
-                  <div class="header-icons-row">
-                      <button class="btn-icon" (click)="toggleMaximize(openNote)" [title]="openNote.isMaximized ? 'Minimizar' : 'Maximizar'">
-                        {{ openNote.isMaximized ? '❐' : '⬜' }}
-                      </button>
-                      
-                      <button class="btn-icon" (click)="toggleDateEdit(openNote)" [class.active]="openNote.dataLembrete">⏰</button>
-                      <button class="btn-icon" (click)="closeNote(i)">✖</button>
-                  </div>
-              </div>
-
-              <div class="postit-meta" *ngIf="openNote.isDateEditing">
-                  <label class="date-label">Data:
-                    <input type="datetime-local" [ngModel]="openNote.dataLembrete" (ngModelChange)="updateReminderDate(openNote, $event)" class="date-input">
-                  </label>
-              </div>
-
-              <div class="editor-toolbar" *ngIf="openNote.editor">
-                  <select (change)="changeFontSize(openNote.editor, $event)" class="size-tool" title="Tamanho da Fonte">
-                    <option value="" disabled selected>A</option>
-                    <option *ngFor="let size of fontSizes" [value]="size">{{ size }}</option>
-                  </select>
-
-                  <div class="vertical-separator"></div>
-
-                  <button (click)="openNote.editor.chain().focus().toggleBold().run()" 
-                          [class.active-tool]="openNote.editor.isActive('bold')" 
-                          class="btn-tool" title="Negrito"><b>B</b></button>
-                  
-                  <button (click)="openNote.editor.chain().focus().toggleItalic().run()" 
-                          [class.active-tool]="openNote.editor.isActive('italic')" 
-                          class="btn-tool" title="Itálico"><i>I</i></button>
-                  
-                  <button (click)="openNote.editor.chain().focus().toggleUnderline().run()" 
-                          [class.active-tool]="openNote.editor.isActive('underline')" 
-                          class="btn-tool" title="Sublinhado"><u>U</u></button>
-                  
-                  <div class="vertical-separator"></div>
-
-                   <div class="color-wrapper" title="Cor da Letra">
-                      <span style="font-size: 0.9rem; font-weight: bold; cursor:pointer;">A</span>
-                      <input type="color" 
-                             (input)="openNote.editor.chain().focus().setColor($any($event.target).value).run()"
-                             [value]="openNote.editor.getAttributes('textStyle').color || '#000000'"
-                             class="color-picker-tool">
-                  </div>
-
-                  <div class="vertical-separator"></div>
-
-                  <div class="hilite-group" style="display: flex; gap: 2px;">
-                      <button (click)="openNote.editor.chain().focus().toggleHighlight({ color: '#fff176' }).run()" class="btn-color-tool" style="background: #fff176;" title="Amarelo"></button>
-                      <button (click)="openNote.editor.chain().focus().toggleHighlight({ color: '#a5d6a7' }).run()" class="btn-color-tool" style="background: #a5d6a7;" title="Verde"></button>
-                      <button (click)="openNote.editor.chain().focus().unsetHighlight().run()" class="btn-tool" title="Sem cor">🚫</button>
-                  </div>
-
-                  <div class="vertical-separator"></div>
-
-                  <button (click)="openNote.editor.chain().focus().toggleBulletList().run()" 
-                          [class.active-tool]="openNote.editor.isActive('bulletList')" 
-                          class="btn-tool" title="Lista">UL</button>
-              </div>
-
-              <div class="postit-content-area">
-                <div tiptap [editor]="openNote.editor" [(ngModel)]="openNote.conteudo"></div>
-              </div>
-              
-              <div class="postit-footer">
-                  <div class="colors-row">
-                      <div *ngFor="let color of availableColors" class="color-circle" [style.background]="color" [class.selected]="openNote.cor === color" (click)="changeNoteColor(openNote, color)"></div>
-                  </div>
-                  <div class="footer-btns">
-                      <button class="btn-icon-trash" (click)="deleteNote(openNote, i)">🗑️</button>
-                      <button class="btn-mini save" (click)="saveNote(openNote)"><span>💾</span> Salvar</button>
-                  </div>
+              <div class="search-box">
+                <input type="search" id="search_final" autocomplete="off" placeholder="Buscar..." class="search-input" (input)="onSearch($event)">
               </div>
           </div>
+  
+          <div class="sidebar-list-scroll">
+            <div class="note-group" *ngFor="let group of noteGroups">
+              <div class="group-header" (click)="toggleGroup(group)">
+                 <div class="group-title">
+                   <span class="color-dot-indicator" [style.background]="group.color"></span>
+                   <span>{{ group.count }} notas</span>
+                 </div>
+                 <span class="arrow-icon">{{ group.isOpen ? '▼' : '▶' }}</span>
+              </div>
+              <div class="deck-container" *ngIf="group.isOpen" (wheel)="onDeckWheel($event, group)">
+                 <div class="deck-card" appTiltCard *ngFor="let note of group.notes; let i = index" 
+                   (click)="openNote(note)" [class.active]="i === group.activeIndex"
+                   [class.prev]="group.count > 1 && i === (group.activeIndex - 1 + group.count) % group.count"
+                   [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
+                   [style.background-color]="getCardBackground(note.cor || '#fff')" 
+                   [style.border-left-color]="note.cor || '#ccc'"
+                   [style.background]="getCardBackground(note.cor || '#fff')">
+                    <div class="card-content">
+                        <div class="card-top-row"><div class="note-title">{{ note.titulo || 'Sem Título' }}</div></div>
+                        <div class="note-preview">{{ getPreview(note) }}</div>
+                        <div class="card-bottom"><span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span></div>
+                    </div>
+                    <div class="card-actions"><button class="btn-mini-action btn-trash" (click)="deleteFromSidebar($event, note)">🗑</button></div>
+                 </div>
+              </div>
+            </div>
+            <div style="height: 50px;"></div>
+          </div>
+        </aside>
+  
+        <main class="main-content">
+          
+          <div class="workspace-dock-bar">
+             <div class="dock-slots-container">
+                 <div *ngFor="let color of availableColors" class="dock-slot">
+                    
+                    <div class="slot-stack" 
+                         *ngIf="getMinimizedByColor(color).length > 0" 
+                         (wheel)="onStackWheel($event, color)"
+                         (click)="restoreFromStack(color)"
+                         [style.background]="color">
+                         
+                       <span class="stack-count">{{ getMinimizedByColor(color).length }}</span>
+                       <span class="stack-preview">
+                          {{ getActiveStackNote(color)?.titulo || 'Sem título' }}
+                       </span>
+                    </div>
+  
+                    <div class="slot-empty" *ngIf="getMinimizedByColor(color).length === 0" [style.border-color]="color"></div>
+                 </div>
+             </div>
+          </div>
+  
+          <div class="workspace-scroll">
+            <div class="welcome-screen" *ngIf="visibleNotes.length === 0">
+              <h1>Olá, {{ userName }}! 👋</h1>
+              <p>Você tem <b>{{ totalNotes }}</b> notas criadas.</p>
+              <p class="hint">Painel pronto.</p>
+            </div>
+  
+            <div class="notes-grid" *ngIf="visibleNotes.length > 0" 
+                 [class.single-mode]="visibleNotes.length === 1" 
+                 [class.split-mode]="visibleNotes.length > 1">
+                
+                <div *ngFor="let openNote of visibleNotes" class="postit-card" [style.border-top]="'8px solid ' + (openNote.cor || '#ccc')" [style.background]="openNote.cor || '#fff'">
+                    
+                    <div class="postit-header">
+                        <input [(ngModel)]="openNote.titulo" placeholder="Título..." class="postit-title-input">
+                        <div class="header-icons-row">
+                            <button class="btn-icon" (click)="toggleFavorite(openNote)" [class.active]="openNote.favorita" [title]="openNote.favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'">
+                                {{ openNote.favorita ? '⭐' : '☆' }}
+                            </button>
+                            <button class="btn-icon" (click)="toggleMinimize(openNote)">➖</button>
+                            <button class="btn-icon" (click)="toggleDateEdit(openNote)" [class.active]="openNote.dataLembrete">⏰</button>
+                            <button class="btn-icon" (click)="closeNote(openNote)">✖</button>
+                        </div>
+                    </div>
+  
+                    <div class="postit-meta" *ngIf="openNote.isDateEditing">
+                        <label class="date-label">Data: <input type="datetime-local" [ngModel]="openNote.dataLembrete" (ngModelChange)="updateReminderDate(openNote, $event)" class="date-input"></label>
+                    </div>
+  
+                    <div class="editor-toolbar" *ngIf="openNote.editor">
+                        <select (change)="changeFontSize(openNote.editor, $event)" class="size-tool">
+                            <option value="" disabled selected>A</option>
+                            <option *ngFor="let size of fontSizes" [value]="size">{{ size }}</option>
+                        </select>
+                        
+                        <div class="vertical-separator"></div>
+  
+                        <button (click)="openNote.editor.chain().focus().toggleBold().run()" [class.active-tool]="openNote.editor.isActive('bold')" class="btn-tool"><b>B</b></button>
+                        <button (click)="openNote.editor.chain().focus().toggleItalic().run()" [class.active-tool]="openNote.editor.isActive('italic')" class="btn-tool"><i>I</i></button>
+                        <button (click)="openNote.editor.chain().focus().toggleUnderline().run()" [class.active-tool]="openNote.editor.isActive('underline')" class="btn-tool"><u>U</u></button>
+                        
+                        <div class="vertical-separator"></div>
+  
+                        <div class="color-wrapper">
+                            <span style="font-size: 0.9rem; font-weight: bold; cursor:pointer;">A</span>
+                            <input type="color" (input)="openNote.editor.chain().focus().setColor($any($event.target).value).run()" [value]="openNote.editor.getAttributes('textStyle').color || '#000000'" class="color-picker-tool">
+                        </div>
+  
+                        <div class="vertical-separator"></div>
+  
+                        <div class="hilite-group">
+                            <button (click)="openNote.editor.chain().focus().toggleHighlight({ color: '#fff176' }).run()" class="btn-color-tool" style="background: #fff176;"></button>
+                            <button (click)="openNote.editor.chain().focus().toggleHighlight({ color: '#a5d6a7' }).run()" class="btn-color-tool" style="background: #a5d6a7;"></button>
+                            <button (click)="openNote.editor.chain().focus().unsetHighlight().run()" class="btn-tool">🚫</button>
+                        </div>
+  
+                        <div class="vertical-separator"></div>
+                        <button (click)="openNote.editor.chain().focus().toggleBulletList().run()" [class.active-tool]="openNote.editor.isActive('bulletList')" class="btn-tool">UL</button>
+                    </div>
+  
+                    <div class="postit-content-area"><div tiptap [editor]="openNote.editor" [(ngModel)]="openNote.conteudo"></div></div>
+                    
+                    <div class="postit-footer">
+                        <div class="colors-row"><div *ngFor="let color of availableColors" class="color-circle" [style.background]="color" [class.selected]="openNote.cor === color" (click)="changeNoteColor(openNote, color)"></div></div>
+                        <div class="footer-btns">
+                            <button class="btn-icon-trash" (click)="deleteNote(openNote)">🗑️</button>
+                            <button class="btn-mini save" (click)="saveNote(openNote)"><span>💾</span> Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+  
+            <div class="scratchpad-section" *ngIf="visibleNotes.length === 0">
+              <div class="scratchpad-wrapper">
+                <div class="scratchpad-header">📌 Rascunho Rápido</div>
+                <textarea [(ngModel)]="scratchpadContent" (input)="onScratchpadChange()" class="scratch-input" placeholder="Anote algo rápido..."></textarea>
+              </div>
+            </div>
+          </div>
+        </main>
+    </div>
+  
+    <button class="universal-fab" (click)="createNote()">+</button>
+  
+  </div>
+  
+  <div class="drawer-overlay" *ngIf="isDrawerOpen" (click)="closeDrawer()"></div>
+  <div class="user-drawer" [class.open]="isDrawerOpen">
+      <div class="drawer-header">
+        <div class="drawer-user-info">
+          <img [src]="userProfile.avatarUrl" class="drawer-avatar" alt="Avatar">
+          <div>
+            <h3>{{ userProfile.name }}</h3>
+            <span>Configurações</span>
+          </div>
+        </div>
+        <button class="btn-close-drawer" (click)="closeDrawer()">✖</button>
       </div>
-
-      <div class="scratchpad-section">
-        <div class="scratchpad-wrapper">
-          <div class="scratchpad-header">📌 Rascunho Rápido</div>
-          <textarea [(ngModel)]="scratchpadContent" (input)="onScratchpadChange()" class="scratch-input" placeholder="Anote algo rápido..."></textarea>
+      <div class="drawer-tabs">
+        <button [class.active]="activeDrawerTab === 'profile'" (click)="setActiveTab('profile')">Perfil</button>
+        <button [class.active]="activeDrawerTab === 'plans'" (click)="setActiveTab('plans')">Planos</button>
+        <button [class.active]="activeDrawerTab === 'trash'" (click)="setActiveTab('trash')">
+          🗑️ Lixeira
+          <span class="trash-count" *ngIf="trashNotes.length > 0">{{ trashNotes.length }}</span>
+        </button>
+        <button [class.active]="activeDrawerTab === 'security'" (click)="setActiveTab('security')">Segurança</button>
+      </div>
+      <div class="drawer-content">
+        <div *ngIf="activeDrawerTab === 'profile'" class="tab-pane fade-in">
+          <div class="avatar-upload-section">
+            <div class="avatar-preview">
+              <img [src]="userProfile.avatarUrl" class="profile-avatar-large" alt="Avatar">
+              <label for="avatar-upload" class="avatar-upload-btn">
+                📷 Alterar Foto
+              </label>
+              <input type="file" id="avatar-upload" accept="image/*" (change)="onAvatarChange($event)" style="display: none;">
+            </div>
+          </div>
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="userProfile.name" class="drawer-input">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="userProfile.email" class="drawer-input" disabled>
+          <label>Bio</label>
+          <textarea [(ngModel)]="userProfile.bio" class="drawer-textarea" rows="3"></textarea>
+          <button class="btn-drawer-action" (click)="saveProfile()">Salvar</button>
+        </div>
+        <div *ngIf="activeDrawerTab === 'plans'" class="tab-pane fade-in">
+          <div class="plans-section">
+            <h4 class="plans-title">Escolha seu Plano</h4>
+            <div class="plans-grid">
+              <div class="plan-card" [class.featured]="plan.featured" *ngFor="let plan of availablePlans">
+                <div class="plan-header">
+                  <h5>{{ plan.name }}</h5>
+                  <div class="plan-price">
+                    <span class="price-value">R$ {{ plan.price }}</span>
+                    <span class="price-period">/{{ plan.period }}</span>
+                  </div>
+                </div>
+                <ul class="plan-features">
+                  <li *ngFor="let feature of plan.features">{{ feature }}</li>
+                </ul>
+                <button class="btn-plan" [class.btn-plan-featured]="plan.featured" (click)="selectPlan(plan)">
+                  {{ plan.current ? 'Plano Atual' : 'Escolher Plano' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="activeDrawerTab === 'trash'" class="tab-pane fade-in">
+          <div class="trash-section">
+            <div class="trash-info">
+              <p>Notas excluídas são mantidas por 30 dias antes da exclusão permanente.</p>
+            </div>
+            <div class="trash-list" *ngIf="trashNotes.length > 0">
+              <div class="trash-item" *ngFor="let note of trashNotes">
+                <div class="trash-item-content">
+                  <h5>{{ note.titulo || 'Sem título' }}</h5>
+                  <p class="trash-item-preview">{{ getPreview(note) }}</p>
+                  <div class="trash-item-meta">
+                    <span class="trash-days">
+                      {{ getDaysSinceDeletion(note.dataExclusao) }} dias na lixeira
+                      <span class="days-warning" *ngIf="getDaysSinceDeletion(note.dataExclusao) >= 25">
+                        (Exclusão em breve!)
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <div class="trash-item-actions">
+                  <button class="btn-restore" (click)="restoreFromTrash(note)" title="Restaurar">
+                    ↶ Restaurar
+                  </button>
+                  <button class="btn-delete-permanent" (click)="deletePermanentlyFromTrash(note)" title="Excluir permanentemente">
+                    🗑️ Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="trash-empty" *ngIf="trashNotes.length === 0">
+              <p>Lixeira vazia</p>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="activeDrawerTab === 'security'" class="tab-pane fade-in">
+          <div class="security-alert">🔒 Área Segura.</div>
+          <button class="btn-drawer-action warning">Alterar Senha</button>
         </div>
       </div>
-    </div>
-  </main>
-</div>
-
-<div class="modal-overlay" *ngIf="showUrgentModal && criticalNotes.length > 0">
-  <div class="modal-content atencao-maxima">
-    <div class="modal-header-alert"><div class="modal-icon pulsing">🚨</div><h2>Atenção!</h2></div>
-    <div class="urgent-list"><div *ngFor="let note of criticalNotes" class="urgent-item"><strong>{{note.titulo}}</strong><button class="btn-check-mini" (click)="markAsDone(note)">✅</button></div></div>
-    <div class="modal-actions"><button class="btn-modal btn-success" (click)="markAsDone()">Concluir</button><button class="btn-modal btn-warning" (click)="snoozeTask()">Reagendar</button></div>
+      <div class="drawer-footer"><button class="btn-logout" (click)="logout()">Sair</button></div>
   </div>
-</div>
+  
+  <div class="modal-overlay" *ngIf="showUrgentModal && criticalNotes.length > 0">
+    <div class="modal-content atencao-maxima"><div class="modal-header-alert"><div class="modal-icon pulsing">🚨</div><h2>Atenção!</h2></div><div class="urgent-list"><div *ngFor="let note of criticalNotes" class="urgent-item"><strong>{{note.titulo}}</strong><button class="btn-check-mini" (click)="markAsDone(note)">✅</button></div></div><div class="modal-actions"><button class="btn-modal btn-success" (click)="markAsDone()">Concluir</button><button class="btn-modal btn-warning" (click)="snoozeTask()">Reagendar</button></div></div>
+  </div>

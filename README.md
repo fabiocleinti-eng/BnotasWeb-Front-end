@@ -1,85 +1,88 @@
-# 📝 BnotasWeb
+# 📝 BNotasWeb
 
-Um gerenciador de notas adesivas (sticky notes) inteligente, desenvolvido com **Angular 16+ (Standalone Components)**. O projeto apresenta um editor de texto rico (WYSIWYG) customizado, com controle granular de estilização e manipulação avançada do DOM.
+Um gerenciador de notas adesivas (sticky notes) inteligente e moderno, desenvolvido com **Angular 18+ (Standalone Components)**. O projeto evoluiu para utilizar um editor de texto rico (WYSIWYG) baseado no poderoso framework **Tiptap**, garantindo estabilidade, performance e uma experiência de escrita fluida.
 
-![Preview do Projeto](./gifprojeto.gif)
+![Status do Projeto](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow)
+![Angular](https://img.shields.io/badge/Angular-18+-dd0031?logo=angular)
+![Tiptap](https://img.shields.io/badge/Editor-Tiptap-000?logo=tiptap)
 
-> 🚧 **Status do Projeto: Em Evolução Contínua** > Este projeto encontra-se em **desenvolvimento ativo**. O objetivo é modernizar e simplificar constantemente a experiência do usuário. Embora novas funcionalidades estejam sendo desenhadas para facilitar ainda mais o dia a dia, **todos os recursos listados abaixo estão 100% testados, estáveis e aptos para uso.**
+> 🚧 **Status do Projeto: Em Evolução Contínua**
+> Este projeto encontra-se em **desenvolvimento ativo**. Recentemente, passou por uma refatoração completa de sua engine de texto para oferecer recursos mais avançados e estáveis.
 
 ## 🚀 Visão Geral
 
-Este projeto é uma **Single Page Application (SPA)** focada em produtividade. O grande diferencial técnico reside na **implementação manual da lógica de edição de texto**. Em vez de depender apenas de bibliotecas prontas, foi desenvolvida uma engine própria sobre o `contenteditable` para contornar limitações nativas dos navegadores, garantindo persistência de estilos complexos e uma experiência de usuário fluida.
+O **BnotasWeb** é uma Single Page Application (SPA) focada em produtividade visual. O diferencial técnico atual reside na integração de um editor **Headless** (Tiptap) dentro de um ecossistema Angular, combinando a flexibilidade de componentes personalizados com uma gestão de estado de texto robusta.
 
-## ✨ Funcionalidades Detalhadas (Versão Estável)
+## ✨ Funcionalidades Detalhadas
 
-O BnotasWeb vai além de simples anotações, funcionando como um sistema completo de organização pessoal. As funcionalidades abaixo estão operacionais:
-
-### 1. 🎨 Editor de Texto Rico (Custom Engine)
-* **Formatação Essencial:** Negrito, Itálico e Sublinhado com lógica de "fuga" para não prender o cursor.
-* **Marca-Texto Inteligente:** Cores de fundo dinâmicas com função de parada.
-* **Tipografia Controlada:** Alteração de tamanho (Pequeno, Médio, Grande) e cor da fonte com feedback visual instantâneo na barra de ferramentas.
-* **Reset (Tx):** Botão de limpeza que normaliza o texto e remove formatações aninhadas.
+### 1. 🎨 Editor de Texto Rico (Powered by Tiptap)
+* **Formatação Completa:** Negrito, Itálico, Sublinhado e Listas (Bullet points).
+* **Marca-Texto Multicolorido:** Seleção de cores para destaque (Amarelo, Verde, etc.) com persistência de estilo.
+* **Controle Tipográfico:**
+    * **Tamanho da Fonte:** Controle granular do tamanho da letra via **Extensão Personalizada (Custom Mark)** criada especificamente para este projeto.
+    * **Cores de Texto:** Alteração dinâmica da cor da fonte.
+* **Maximizar Leitura (Novo!):** Funcionalidade que permite expandir o card para ocupar a área de trabalho inteira, facilitando a escrita de textos longos (Focus Mode).
+* **UX Aprimorada:** Comportamento de parágrafos ajustado (margens compactas) e remoção de bordas de foco nativas para um visual limpo.
 
 ### 2. 🗂️ Organização & Produtividade
-* **Navegação "Deck" (Baralho):** Interface inovadora na sidebar onde o usuário usa o scroll (wheel) para rodar entre notas de um mesmo grupo de cor, economizando espaço em tela.
-* **Categorização por Cores:** As notas funcionam como pastas temáticas baseadas em suas cores.
-* **Rascunho Rápido (Scratchpad):** Uma área de transferência persistente (Local Storage) para anotações voláteis que não precisam virar um card.
-* **Busca Instantânea:** Filtro em tempo real por título ou conteúdo.
+* **Navegação "Deck" 3D:** Interface imersiva na sidebar onde o usuário usa o scroll (wheel) para rotacionar entre notas de um mesmo grupo com efeitos de transformação 3D.
+* **Cards Interativos (Tilt):** Efeito de inclinação suave ao passar o mouse sobre os cards.
+* **Categorização por Cores:** As notas funcionam como pastas temáticas visuais.
+* **Rascunho Rápido (Scratchpad):** Área de transferência persistente (LocalStorage) para anotações rápidas.
+* **Busca Instantânea:** Filtragem em tempo real por título ou conteúdo.
 
-### 3. ⏰ Sistema de Alertas
-* **Agendamento:** Definição de datas e horários para lembretes em cada nota.
-* **Modal de Urgência:** Interface de "Atenção Máxima" que alerta sobre tarefas vencidas.
-* **Ações Rápidas:** Opções para concluir ou adiar (Snooze) tarefas diretamente do alerta.
+### 3. ⏰ Sistema de Alertas Inteligente
+* **Lembretes:** Configuração de data/hora em cada nota.
+* **Modal de Urgência:** Alerta visual de "Atenção Máxima" para tarefas vencidas.
+* **Ações Rápidas:** Opções de "Concluir" ou "Adiar" (Snooze) diretamente do modal.
 
-### 4. 👤 Gestão de Usuário
-* **Identificação:** Sistema que personaliza a interface com o nome do usuário (extraído do e-mail/auth).
-* **CRUD Completo:** Criação, leitura, atualização e exclusão de notas integradas ao Backend.
+---
 
 ## 🛠️ Destaques Técnicos & Desafios Superados
 
-Este é o ponto alto do projeto para avaliação técnica. O desenvolvimento exigiu domínio sobre a API de **Selection** e **Range** do navegador:
+A migração para o Tiptap trouxe desafios interessantes de engenharia de software:
 
-1.  **Persistência de Estilo (Cursor Tracking):**
-    * *Desafio:* Navegadores tendem a resetar a formatação (cor/tamanho) para o padrão ao pular uma linha ou mover o cursor para o início de um bloco.
-    * *Solução:* Implementação da técnica **"Zero Width Space Injection" (\u200B)**. O código injeta spans invisíveis com o estilo desejado e força o cursor para dentro deles, garantindo que a escolha do usuário (ex: letra grande e vermelha) persista mesmo em novas linhas.
+1.  **Encapsulamento do Angular vs. Tiptap:**
+    * *Desafio:* O Tiptap injeta elementos HTML (`.ProseMirror`) dinamicamente, o que conflitava com o *View Encapsulation* do Angular, impedindo a estilização correta (bordas indesejadas, foco).
+    * *Solução:* Implementação estratégica de estilos globais e seletores de atributo (`[contenteditable]`) para garantir uma interface limpa sem quebrar o isolamento dos componentes.
 
-2.  **Lógica de "Fuga" Recursiva:**
-    * *Desafio:* Ficar "preso" dentro de tags como `<u>` ou `<span style="background...">` ao tentar desligar um estilo.
-    * *Solução:* Algoritmos (`performEscape`, `escapeSpecificTag`) que analisam a árvore do DOM a partir do cursor, encontram o nó pai estilizado e movem fisicamente o `Range` para fora dele.
+2.  **Extensões Personalizadas (Custom Marks):**
+    * Desenvolvimento de uma extensão própria para gerenciar o atributo `font-size` dentro do modelo de documento do Tiptap, permitindo que o tamanho da fonte seja aplicado e preservado independentemente de outras marcas (como negrito ou cor).
 
-3.  **Sincronização UI/Estado (Two-way binding visual):**
-    * A barra de ferramentas lê dinamicamente o `Computed Style` na posição do cursor. Se você clica em um texto vermelho, o botão de cor na toolbar atualiza automaticamente para vermelho.
-
-4.  **UX Interativo (Tilt Effect):**
-    * Diretiva personalizada que calcula a posição do mouse relativa ao card para aplicar uma transformação 3D suave (CSS Transform), aumentando a imersão.
+3.  **Gerenciamento de Estado Visual:**
+    * Controle de estado para funcionalidades como "Maximizar Card", utilizando binding de classes CSS condicionais e posicionamento absoluto relativo ao workspace.
 
 ## 💻 Tecnologias
 
-* **Framework:** Angular 16+ (Standalone Components)
+* **Framework:** Angular 18+ (Standalone Components)
 * **Linguagem:** TypeScript
-* **Estilização:** SCSS / CSS3 (CSS Variables, Flexbox, Grid)
-* **Core:** HTML5 `contenteditable` API, DOM Manipulation API
+* **Editor Engine:** [Tiptap](https://tiptap.dev/) (Headless WYSIWYG)
+* **Estilização:** CSS3 (3D Transforms, Flexbox, Grid, Keyframes)
+* **Gerenciamento de Pacotes:** NPM
 
 ## 📦 Como Rodar o Projeto
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git](https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git)
+    git clone (https://github.com/fabiocleinti-eng/BnotasWeb-Front-end.git)
     ```
 2.  **Instale as dependências:**
     ```bash
+    cd BnotasWeb-Front-end
     npm install
     ```
 3.  **Execute o servidor de desenvolvimento:**
     ```bash
-    ng serve
+    npm start
     ```
 4.  Acesse `http://localhost:4200/`.
+
+---
 
 ## 👨‍💻 Autor
 
 Desenvolvido por **Fábio Clein**.
-Entre em contato: [LinkedIn](https://www.linkedin.com/in/f%C3%A1bio-clein-8aabb5325/) | fabioclein.ti@gmail.com
+Engenheiro de Software focado em soluções Front-end modernas e interativas.
 
----
-*Projeto desenvolvido para fins de estudo e demonstração de competências avançadas em Front-end Engineering.*
+* **LinkedIn:** (https://www.linkedin.com/in/f%C3%A1bio-clein-8aabb5325/)
+* **E-mail:** fabioclein.ti@gmail.com

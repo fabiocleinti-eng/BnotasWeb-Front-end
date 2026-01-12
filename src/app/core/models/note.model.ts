@@ -7,7 +7,11 @@ export interface Note {
   dataCriacao?: string | Date;
   dataModificacao?: string | Date;
   dataLembrete?: string | null;
-  qtdReagendamentos?: number; // <--- AGORA É NÚMERO
+  qtdReagendamentos?: number;
   isCollapsed?: boolean;
   isDateEditing?: boolean;
+  tags?: string[]; // Sistema de Tags
+  deletado?: boolean; // Para lixeira
+  dataExclusao?: Date; // Data de exclusão
+  senha?: string; // Para notas protegidas (funcionalidade paga)
 }
