@@ -4,7 +4,7 @@ export interface UserPlan {
   price: number;
   currency: string;
   features: string[];
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export interface UserSubscription {
@@ -25,6 +25,9 @@ export enum PremiumFeature {
   CUSTOM_THEMES = 'custom_themes',
   VOICE_ACCESS = 'voice_access'
 }
+
+
+
 
 
 

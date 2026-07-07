@@ -47,3 +47,6 @@ h2 { font-size: 2rem; letter-spacing: 2px; margin-bottom: 30px; font-weight: 600
 .inner-circle { font-size: 5rem; background: white; width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #0083b0; }
 .error-toast { position: absolute; bottom: 30px; left: 20px; background: #ff5252; color: white; padding: 12px 24px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-weight: bold; z-index: 100; }
 @media (max-width: 850px) { .login-page { flex-direction: column; } .login-right { display: none; } }
+/* Link para termos de uso (LGPD) */
+.legal-link { display: block; text-align: center; margin-top: 14px; font-size: 0.75rem; color: #999; text-decoration: none; }
+.legal-link:hover { color: #6200ea; text-decoration: underline; }

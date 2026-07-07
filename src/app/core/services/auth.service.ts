@@ -2,12 +2,19 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
-
-const API_URL = 'http://localhost:3000/api';
+import { API_URL } from '../api.config';
 
 interface LoginResponse {
   token: string;
-  user: { id: number; email: string };
+  user: { id: number; email: string; nome?: string; sobrenome?: string; telefone?: string };
+}
+
+export interface RegisterData {
+  nome: string;
+  sobrenome: string;
+  telefone?: string;
+  email: string;
+  senha: string;
 }
 
 @Injectable({
@@ -29,12 +36,21 @@ export class AuthService {
     );
   }
 
-  register(credentials: { email: string, senha: string }): Observable<any> {
-    return this.http.post(`${API_URL}/usuarios`, credentials);
+  register(data: RegisterData): Observable<any> {
+    return this.http.post(`${API_URL}/usuarios`, data);
   }
 
   forgotPassword(email: string): Observable<any> {
     return this.http.post(`${API_URL}/forgot-password`, { email });
+  }
+
+  changePassword(senhaAtual: string, novaSenha: string): Observable<any> {
+    return this.http.put(`${API_URL}/usuarios/senha`, { senhaAtual, novaSenha });
+  }
+
+  // Exclusão de conta (LGPD) — exige a senha para confirmar
+  deleteAccount(senha: string): Observable<any> {
+    return this.http.delete(`${API_URL}/usuarios/me`, { body: { senha } });
   }
 
   private saveToken(token: string): void {

@@ -132,3 +132,6 @@ ENCRYPTION_KEY=seu-key-de-criptografia-32-caracteres-hex
 
 
 
+
+
+

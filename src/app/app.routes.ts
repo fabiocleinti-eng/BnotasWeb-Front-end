@@ -16,6 +16,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reset-password/reset-password.component')
       .then(m => m.ResetPasswordComponent)
   },
+  // ROTA PÚBLICA: Termos de Uso e Privacidade (LGPD)
+  {
+    path: 'legal',
+    loadComponent: () => import('./features/legal/legal.component')
+      .then(m => m.LegalComponent)
+  },
   
   // ROTAS PROTEGIDAS (Exigem Login)
   {

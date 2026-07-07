@@ -1,4 +1,4 @@
-<div class="dashboard-container" [class.dark-mode]="isDarkMode">
+<div class="dashboard-container">
 
     <div class="main-header">
         <div class="header-left">
@@ -8,9 +8,6 @@
             <h1 class="app-logo">BnotasWeb</h1>
         </div>
         <div class="header-right">
-            <button class="btn-theme-toggle" (click)="toggleDarkMode()" [title]="isDarkMode ? 'Modo Claro' : 'Modo Escuro'">
-                {{ isDarkMode ? '☀️' : '🌙' }}
-            </button>
             <div class="user-avatar-trigger" (click)="toggleDrawer()">
                 <img [src]="userProfile.avatarUrl" alt="User">
             </div>
@@ -33,6 +30,10 @@
           </div>
   
           <div class="sidebar-list-scroll">
+            <div class="sidebar-load-error" *ngIf="notesLoadError">
+              <p>Não foi possível carregar as notas.</p>
+              <p class="sidebar-load-hint">Verifique se o backend está rodando (porta 3000) e se você está logado.</p>
+            </div>
             <div class="note-group" *ngFor="let group of noteGroups">
               <div class="group-header" (click)="toggleGroup(group)">
                  <div class="group-title">
@@ -46,9 +47,7 @@
                    (click)="openNote(note)" [class.active]="i === group.activeIndex"
                    [class.prev]="group.count > 1 && i === (group.activeIndex - 1 + group.count) % group.count"
                    [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
-                   [style.background-color]="getCardBackground(note.cor || '#fff')" 
-                   [style.border-left-color]="note.cor || '#ccc'"
-                   [style.background]="getCardBackground(note.cor || '#fff')">
+                   [style.background]="getCardBackground(note.cor || '#fff')" [style.border-left-color]="note.cor || '#ccc'">
                     <div class="card-content">
                         <div class="card-top-row"><div class="note-title">{{ note.titulo || 'Sem Título' }}</div></div>
                         <div class="note-preview">{{ getPreview(note) }}</div>
@@ -59,6 +58,16 @@
               </div>
             </div>
             <div style="height: 50px;"></div>
+          </div>
+
+          <div class="sidebar-footer">
+            <div class="note-limit" *ngIf="isFreePlan" [class.limit-full]="notesUsed >= FREE_NOTE_LIMIT">
+              {{ notesUsed }}/{{ FREE_NOTE_LIMIT }} notas (plano gratuito)
+            </div>
+            <button type="button" class="btn-open-trash" (click)="openTrash()">
+              🗑️ Lixeira
+              <span class="trash-badge" *ngIf="trashNotes.length > 0">{{ trashNotes.length }}</span>
+            </button>
           </div>
         </aside>
   
@@ -96,14 +105,11 @@
                  [class.single-mode]="visibleNotes.length === 1" 
                  [class.split-mode]="visibleNotes.length > 1">
                 
-                <div *ngFor="let openNote of visibleNotes" class="postit-card" [style.border-top]="'8px solid ' + (openNote.cor || '#ccc')" [style.background]="openNote.cor || '#fff'">
+                <div *ngFor="let openNote of visibleNotes" class="postit-card" [style.border-top]="'8px solid ' + (openNote.cor || '#ccc')">
                     
                     <div class="postit-header">
                         <input [(ngModel)]="openNote.titulo" placeholder="Título..." class="postit-title-input">
                         <div class="header-icons-row">
-                            <button class="btn-icon" (click)="toggleFavorite(openNote)" [class.active]="openNote.favorita" [title]="openNote.favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'">
-                                {{ openNote.favorita ? '⭐' : '☆' }}
-                            </button>
                             <button class="btn-icon" (click)="toggleMinimize(openNote)">➖</button>
                             <button class="btn-icon" (click)="toggleDateEdit(openNote)" [class.active]="openNote.dataLembrete">⏰</button>
                             <button class="btn-icon" (click)="closeNote(openNote)">✖</button>
@@ -143,6 +149,7 @@
   
                         <div class="vertical-separator"></div>
                         <button (click)="openNote.editor.chain().focus().toggleBulletList().run()" [class.active-tool]="openNote.editor.isActive('bulletList')" class="btn-tool">UL</button>
+                        <button (click)="openNote.editor.chain().focus().toggleTaskList().run()" [class.active-tool]="openNote.editor.isActive('taskList')" class="btn-tool" title="Checklist">☑</button>
                     </div>
   
                     <div class="postit-content-area"><div tiptap [editor]="openNote.editor" [(ngModel)]="openNote.conteudo"></div></div>
@@ -151,7 +158,11 @@
                         <div class="colors-row"><div *ngFor="let color of availableColors" class="color-circle" [style.background]="color" [class.selected]="openNote.cor === color" (click)="changeNoteColor(openNote, color)"></div></div>
                         <div class="footer-btns">
                             <button class="btn-icon-trash" (click)="deleteNote(openNote)">🗑️</button>
-                            <button class="btn-mini save" (click)="saveNote(openNote)"><span>💾</span> Salvar</button>
+                            <button class="btn-mini save" (click)="saveNote(openNote)" [disabled]="saveInProgress">
+              <span *ngIf="!saveInProgress">💾</span><span *ngIf="saveInProgress" class="btn-saving">...</span>
+              {{ saveInProgress ? 'Salvando...' : 'Salvar' }}
+            </button>
+            <span class="save-ok" *ngIf="saveSuccess">✓ Salvo!</span>
                         </div>
                     </div>
                 </div>
@@ -173,108 +184,147 @@
   
   <div class="drawer-overlay" *ngIf="isDrawerOpen" (click)="closeDrawer()"></div>
   <div class="user-drawer" [class.open]="isDrawerOpen">
-      <div class="drawer-header">
-        <div class="drawer-user-info">
+    <header class="drawer-header">
+      <div class="drawer-user-info">
+        <div class="drawer-avatar-wrap">
           <img [src]="userProfile.avatarUrl" class="drawer-avatar" alt="Avatar">
-          <div>
-            <h3>{{ userProfile.name }}</h3>
-            <span>Configurações</span>
-          </div>
         </div>
-        <button class="btn-close-drawer" (click)="closeDrawer()">✖</button>
+        <div class="drawer-header-text">
+          <h3 class="drawer-name">{{ userProfile.name }}</h3>
+          <span class="drawer-subtitle">Configurações</span>
+        </div>
       </div>
-      <div class="drawer-tabs">
-        <button [class.active]="activeDrawerTab === 'profile'" (click)="setActiveTab('profile')">Perfil</button>
-        <button [class.active]="activeDrawerTab === 'plans'" (click)="setActiveTab('plans')">Planos</button>
-        <button [class.active]="activeDrawerTab === 'trash'" (click)="setActiveTab('trash')">
-          🗑️ Lixeira
-          <span class="trash-count" *ngIf="trashNotes.length > 0">{{ trashNotes.length }}</span>
+      <button type="button" class="btn-close-drawer" (click)="closeDrawer()" aria-label="Fechar">✕</button>
+    </header>
+    <nav class="drawer-tabs">
+      <button type="button" [class.active]="activeDrawerTab === 'profile'" (click)="setActiveTab('profile')">Perfil</button>
+      <button type="button" [class.active]="activeDrawerTab === 'security'" (click)="setActiveTab('security')">Segurança</button>
+      <button type="button" [class.active]="activeDrawerTab === 'plans'" (click)="setActiveTab('plans')">Planos</button>
+    </nav>
+    <div class="drawer-content">
+      <div *ngIf="activeDrawerTab === 'profile'" class="tab-pane fade-in">
+        <div class="profile-photo-section">
+          <div class="profile-photo-preview">
+            <img [src]="userProfile.avatarUrl" alt="Sua foto" class="profile-photo-img">
+          </div>
+          <label class="drawer-label">URL da foto (opcional)</label>
+          <input type="url" [(ngModel)]="userProfile.avatarUrl" class="drawer-input" placeholder="https://... ou deixe em branco para iniciais">
+        </div>
+        <label class="drawer-label">Nome</label>
+        <input type="text" [(ngModel)]="userProfile.name" class="drawer-input" placeholder="Seu nome">
+        <label class="drawer-label">Bio (opcional)</label>
+        <textarea [(ngModel)]="userProfile.bio" class="drawer-textarea" placeholder="Uma frase sobre você..." rows="3"></textarea>
+        <button type="button" class="btn-drawer-action primary" (click)="saveProfile()">Salvar</button>
+      </div>
+      <div *ngIf="activeDrawerTab === 'security'" class="tab-pane fade-in">
+        <div class="security-alert">🔒 Altere sua senha de acesso. Ela deve ser forte para proteger suas notas.</div>
+
+        <label class="drawer-label">Senha atual</label>
+        <input type="password" [(ngModel)]="pwdForm.atual" class="drawer-input" placeholder="Sua senha atual" autocomplete="current-password">
+
+        <label class="drawer-label">Nova senha</label>
+        <input type="password" [(ngModel)]="pwdForm.nova" (ngModelChange)="onNewPasswordInput()" class="drawer-input" placeholder="Nova senha" autocomplete="new-password">
+
+        <div class="pwd-requirements" *ngIf="pwdForm.nova">
+          <ul>
+            <li [class.valid]="pwdCriteria.minLength">Min. 8 caracteres</li>
+            <li [class.valid]="pwdCriteria.hasUpperCase">1 Letra Maiúscula</li>
+            <li [class.valid]="pwdCriteria.hasSpecialChar">1 Caracter Especial (&#64;#$%)</li>
+          </ul>
+        </div>
+
+        <label class="drawer-label">Confirmar nova senha</label>
+        <input type="password" [(ngModel)]="pwdForm.confirmar" class="drawer-input" placeholder="Repita a nova senha" autocomplete="new-password">
+        <div class="pwd-mismatch" *ngIf="pwdForm.confirmar && pwdForm.nova !== pwdForm.confirmar">As senhas não coincidem.</div>
+
+        <div class="drawer-feedback" *ngIf="pwdMsg" [class.error]="pwdMsgError">{{ pwdMsg }}</div>
+
+        <button type="button" class="btn-drawer-action primary" [disabled]="!canSubmitPassword" (click)="changePassword()">
+          {{ pwdSaving ? 'Salvando...' : 'Alterar senha' }}
         </button>
-        <button [class.active]="activeDrawerTab === 'security'" (click)="setActiveTab('security')">Segurança</button>
-      </div>
-      <div class="drawer-content">
-        <div *ngIf="activeDrawerTab === 'profile'" class="tab-pane fade-in">
-          <div class="avatar-upload-section">
-            <div class="avatar-preview">
-              <img [src]="userProfile.avatarUrl" class="profile-avatar-large" alt="Avatar">
-              <label for="avatar-upload" class="avatar-upload-btn">
-                📷 Alterar Foto
-              </label>
-              <input type="file" id="avatar-upload" accept="image/*" (change)="onAvatarChange($event)" style="display: none;">
-            </div>
+
+        <div class="danger-zone">
+          <div class="danger-title">Zona de perigo</div>
+          <button type="button" class="btn-danger-link" (click)="toggleDeleteAccount()">Excluir minha conta</button>
+          <div *ngIf="showDeleteAccount" class="danger-confirm">
+            <p class="danger-text">Sua conta e todas as notas serão excluídas <b>permanentemente</b> (LGPD — direito de eliminação). Digite sua senha para confirmar:</p>
+            <input type="password" [(ngModel)]="deleteAccountPwd" class="drawer-input" placeholder="Sua senha" autocomplete="current-password">
+            <div class="drawer-feedback error" *ngIf="deleteAccountMsg">{{ deleteAccountMsg }}</div>
+            <button type="button" class="btn-drawer-action danger" [disabled]="!deleteAccountPwd || deleteAccountBusy" (click)="deleteAccount()">
+              {{ deleteAccountBusy ? 'Excluindo...' : 'Excluir conta definitivamente' }}
+            </button>
           </div>
-          <label>Nome</label>
-          <input type="text" [(ngModel)]="userProfile.name" class="drawer-input">
-          <label>Email</label>
-          <input type="email" [(ngModel)]="userProfile.email" class="drawer-input" disabled>
-          <label>Bio</label>
-          <textarea [(ngModel)]="userProfile.bio" class="drawer-textarea" rows="3"></textarea>
-          <button class="btn-drawer-action" (click)="saveProfile()">Salvar</button>
-        </div>
-        <div *ngIf="activeDrawerTab === 'plans'" class="tab-pane fade-in">
-          <div class="plans-section">
-            <h4 class="plans-title">Escolha seu Plano</h4>
-            <div class="plans-grid">
-              <div class="plan-card" [class.featured]="plan.featured" *ngFor="let plan of availablePlans">
-                <div class="plan-header">
-                  <h5>{{ plan.name }}</h5>
-                  <div class="plan-price">
-                    <span class="price-value">R$ {{ plan.price }}</span>
-                    <span class="price-period">/{{ plan.period }}</span>
-                  </div>
-                </div>
-                <ul class="plan-features">
-                  <li *ngFor="let feature of plan.features">{{ feature }}</li>
-                </ul>
-                <button class="btn-plan" [class.btn-plan-featured]="plan.featured" (click)="selectPlan(plan)">
-                  {{ plan.current ? 'Plano Atual' : 'Escolher Plano' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="activeDrawerTab === 'trash'" class="tab-pane fade-in">
-          <div class="trash-section">
-            <div class="trash-info">
-              <p>Notas excluídas são mantidas por 30 dias antes da exclusão permanente.</p>
-            </div>
-            <div class="trash-list" *ngIf="trashNotes.length > 0">
-              <div class="trash-item" *ngFor="let note of trashNotes">
-                <div class="trash-item-content">
-                  <h5>{{ note.titulo || 'Sem título' }}</h5>
-                  <p class="trash-item-preview">{{ getPreview(note) }}</p>
-                  <div class="trash-item-meta">
-                    <span class="trash-days">
-                      {{ getDaysSinceDeletion(note.dataExclusao) }} dias na lixeira
-                      <span class="days-warning" *ngIf="getDaysSinceDeletion(note.dataExclusao) >= 25">
-                        (Exclusão em breve!)
-                      </span>
-                    </span>
-                  </div>
-                </div>
-                <div class="trash-item-actions">
-                  <button class="btn-restore" (click)="restoreFromTrash(note)" title="Restaurar">
-                    ↶ Restaurar
-                  </button>
-                  <button class="btn-delete-permanent" (click)="deletePermanentlyFromTrash(note)" title="Excluir permanentemente">
-                    🗑️ Excluir
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="trash-empty" *ngIf="trashNotes.length === 0">
-              <p>Lixeira vazia</p>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="activeDrawerTab === 'security'" class="tab-pane fade-in">
-          <div class="security-alert">🔒 Área Segura.</div>
-          <button class="btn-drawer-action warning">Alterar Senha</button>
         </div>
       </div>
-      <div class="drawer-footer"><button class="btn-logout" (click)="logout()">Sair</button></div>
+      <div *ngIf="activeDrawerTab === 'plans'" class="tab-pane fade-in plans-pane">
+        <p class="plans-intro">Escolha o plano ideal para você. Recursos extras como notas protegidas e exportação estão nos planos pagos.</p>
+
+        <div class="plans-loading" *ngIf="plansLoading">Carregando planos...</div>
+        <div class="plans-loading" *ngIf="!plansLoading && plans.length === 0">Não foi possível carregar os planos. Verifique se o servidor está rodando.</div>
+
+        <div class="drawer-feedback" *ngIf="planMsg" [class.error]="planMsgError">{{ planMsg }}</div>
+
+        <div class="plan-cards">
+          <div *ngFor="let plan of plans" class="plan-card"
+               [class.plan-free]="plan.id === 'free'"
+               [class.plan-current]="plan.id === currentPlanId">
+            <div class="plan-badge" *ngIf="plan.id === currentPlanId">Seu plano</div>
+            <div class="plan-name">{{ plan.name }}</div>
+            <div class="plan-price">
+              <span *ngIf="plan.price === 0">Grátis</span>
+              <span *ngIf="plan.price > 0">R$ {{ plan.price | number:'1.2-2' }}<small>/mês</small></span>
+            </div>
+            <ul class="plan-features">
+              <li *ngFor="let f of getPlanFeatures(plan)">{{ f }}</li>
+            </ul>
+            <button type="button" class="btn-plan"
+                    [class.primary]="plan.id !== currentPlanId && plan.price > 0"
+                    [disabled]="plan.id === currentPlanId || planActionInProgress"
+                    (click)="subscribeToPlan(plan)">
+              {{ plan.id === currentPlanId ? 'Plano atual' : (planActionInProgress ? 'Aguarde...' : (plan.price > 0 ? 'Assinar' : 'Usar Gratuito')) }}
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="btn-cancel-sub" *ngIf="currentPlanId !== 'free'" [disabled]="planActionInProgress" (click)="cancelSubscription()">
+          Cancelar assinatura
+        </button>
+      </div>
+    </div>
+    <footer class="drawer-footer">
+      <button type="button" class="btn-logout" (click)="logout()">Sair</button>
+    </footer>
   </div>
   
+  <div class="modal-overlay" *ngIf="isTrashOpen" (click)="closeTrash()">
+    <div class="modal-content trash-modal" (click)="$event.stopPropagation()">
+      <div class="trash-modal-header">
+        <h2>🗑️ Lixeira</h2>
+        <button type="button" class="btn-close-drawer trash-close" (click)="closeTrash()" aria-label="Fechar">✕</button>
+      </div>
+      <p class="trash-hint">Notas na lixeira contam no limite do plano gratuito. Restaure ou exclua de vez.</p>
+
+      <div class="trash-loading" *ngIf="trashLoading">Carregando...</div>
+      <div class="trash-empty" *ngIf="!trashLoading && trashNotes.length === 0">
+        A lixeira está vazia. 🎉
+      </div>
+
+      <div class="trash-list" *ngIf="trashNotes.length > 0">
+        <div class="trash-item" *ngFor="let note of trashNotes">
+          <span class="trash-color-dot" [style.background]="note.cor || '#ccc'"></span>
+          <div class="trash-item-info">
+            <div class="trash-item-title">{{ note.titulo || 'Sem título' }}</div>
+            <div class="trash-item-date">Modificada em {{ note.dataModificacao | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+          <div class="trash-item-actions">
+            <button type="button" class="btn-restore" [disabled]="trashActionInProgress" (click)="restoreNote(note)">↩ Restaurar</button>
+            <button type="button" class="btn-delete-forever" [disabled]="trashActionInProgress" (click)="deleteNoteForever(note)">Excluir de vez</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="showUrgentModal && criticalNotes.length > 0">
     <div class="modal-content atencao-maxima"><div class="modal-header-alert"><div class="modal-icon pulsing">🚨</div><h2>Atenção!</h2></div><div class="urgent-list"><div *ngFor="let note of criticalNotes" class="urgent-item"><strong>{{note.titulo}}</strong><button class="btn-check-mini" (click)="markAsDone(note)">✅</button></div></div><div class="modal-actions"><button class="btn-modal btn-success" (click)="markAsDone()">Concluir</button><button class="btn-modal btn-warning" (click)="snoozeTask()">Reagendar</button></div></div>
   </div>
