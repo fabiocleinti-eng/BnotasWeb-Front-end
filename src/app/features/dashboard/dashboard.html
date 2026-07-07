@@ -274,6 +274,50 @@
           {{ pwdSaving ? 'Salvando...' : 'Alterar senha' }}
         </button>
 
+        <div class="twofa-section">
+          <div class="twofa-header">
+            <span class="drawer-label" style="margin:0">Verificação em duas etapas (2FA)</span>
+            <span class="twofa-status" [class.on]="twoFAEnabled">{{ twoFAEnabled ? 'ATIVADA' : 'DESATIVADA' }}</span>
+          </div>
+          <p class="twofa-desc">Mesmo que alguém descubra sua senha, não entra sem o código do seu app autenticador (Google Authenticator, Authy...).</p>
+
+          <div class="drawer-feedback" *ngIf="twoFAMsg" [class.error]="twoFAMsgError">{{ twoFAMsg }}</div>
+
+          <!-- Desativada e sem setup em andamento -->
+          <button type="button" *ngIf="!twoFAEnabled && !twoFASetup" class="btn-drawer-action primary"
+                  [disabled]="twoFABusy" (click)="start2FASetup()">
+            {{ twoFABusy ? 'Gerando...' : 'Ativar 2FA' }}
+          </button>
+
+          <!-- Setup: QR code + confirmação -->
+          <div *ngIf="twoFASetup" class="twofa-setup">
+            <p class="twofa-desc"><b>1.</b> Escaneie o QR code no app autenticador:</p>
+            <img [src]="twoFASetup.qrCode" alt="QR Code 2FA" class="twofa-qr">
+            <p class="twofa-secret">Ou digite manualmente: <code>{{ twoFASetup.secret }}</code></p>
+            <p class="twofa-desc"><b>2.</b> Digite o código de 6 dígitos que apareceu no app:</p>
+            <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="twoFACode"
+                   class="drawer-input twofa-code-input" placeholder="000000" (keyup.enter)="confirm2FA()">
+            <div class="twofa-actions">
+              <button type="button" class="btn-drawer-action" (click)="cancel2FASetup()">Cancelar</button>
+              <button type="button" class="btn-drawer-action primary" [disabled]="twoFACode.length !== 6 || twoFABusy" (click)="confirm2FA()">
+                {{ twoFABusy ? 'Verificando...' : 'Confirmar e ativar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Ativada: desativar exige senha + código -->
+          <div *ngIf="twoFAEnabled" class="twofa-setup">
+            <p class="twofa-desc">Para desativar, confirme sua senha e um código atual do app:</p>
+            <input type="password" [(ngModel)]="twoFADisablePwd" class="drawer-input" placeholder="Senha da conta" autocomplete="current-password">
+            <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="twoFADisableCode"
+                   class="drawer-input twofa-code-input" placeholder="Código do app (000000)">
+            <button type="button" class="btn-drawer-action warning" style="margin-top:10px"
+                    [disabled]="!twoFADisablePwd || twoFADisableCode.length !== 6 || twoFABusy" (click)="disable2FA()">
+              {{ twoFABusy ? 'Desativando...' : 'Desativar 2FA' }}
+            </button>
+          </div>
+        </div>
+
         <div class="danger-zone">
           <div class="danger-title">Zona de perigo</div>
           <button type="button" class="btn-danger-link" (click)="toggleDeleteAccount()">Excluir minha conta</button>

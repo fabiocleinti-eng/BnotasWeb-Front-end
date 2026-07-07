@@ -98,6 +98,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   unlockBusy: boolean = false;
   unlockMsg: string = '';
 
+  // === 2FA (autenticação de dois fatores) ===
+  twoFAEnabled: boolean = false;
+  twoFASetup: { qrCode: string; secret: string } | null = null;
+  twoFACode: string = '';
+  twoFADisablePwd: string = '';
+  twoFADisableCode: string = '';
+  twoFABusy: boolean = false;
+  twoFAMsg: string = '';
+  twoFAMsgError: boolean = false;
+
   // === EXCLUIR CONTA (LGPD) ===
   showDeleteAccount: boolean = false;
   deleteAccountPwd: string = '';
@@ -158,6 +168,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadPlans();
     this.loadSubscription();
     this.loadTrash();
+    this.load2FAStatus();
     this.loadScratchpad();
     this.loadNotes();
     this.availableColors.forEach(c => this.stackIndices[c] = 0);
@@ -244,6 +255,67 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.planActionInProgress = false;
         this.planMsgError = true;
         this.planMsg = err?.error?.error?.message || 'Não foi possível cancelar. Tente novamente.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==========================================
+  // 2FA — AUTENTICAÇÃO DE DOIS FATORES
+  // ==========================================
+  load2FAStatus() {
+    this.authService.get2FAStatus().subscribe({
+      next: s => { this.twoFAEnabled = s.enabled; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+  }
+
+  start2FASetup() {
+    if (this.twoFABusy) return;
+    this.twoFABusy = true; this.twoFAMsg = '';
+    this.authService.setup2FA().subscribe({
+      next: res => { this.twoFASetup = res; this.twoFACode = ''; this.twoFABusy = false; this.cdr.detectChanges(); },
+      error: err => {
+        this.twoFABusy = false; this.twoFAMsgError = true;
+        this.twoFAMsg = err?.error?.error?.message || 'Erro ao gerar o QR code.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  confirm2FA() {
+    if (this.twoFACode.length !== 6 || this.twoFABusy) return;
+    this.twoFABusy = true; this.twoFAMsg = '';
+    this.authService.enable2FA(this.twoFACode).subscribe({
+      next: () => {
+        this.twoFABusy = false; this.twoFAEnabled = true; this.twoFASetup = null;
+        this.twoFAMsgError = false; this.twoFAMsg = '2FA ativado! Seu login agora pede o código do app. ✓';
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.twoFABusy = false; this.twoFAMsgError = true;
+        this.twoFAMsg = err?.error?.error?.message || 'Código incorreto.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cancel2FASetup() { this.twoFASetup = null; this.twoFACode = ''; this.twoFAMsg = ''; }
+
+  disable2FA() {
+    if (!this.twoFADisablePwd || this.twoFADisableCode.length !== 6 || this.twoFABusy) return;
+    if (!confirm('Desativar a verificação em duas etapas? Sua conta ficará menos protegida.')) return;
+    this.twoFABusy = true; this.twoFAMsg = '';
+    this.authService.disable2FA(this.twoFADisablePwd, this.twoFADisableCode).subscribe({
+      next: () => {
+        this.twoFABusy = false; this.twoFAEnabled = false;
+        this.twoFADisablePwd = ''; this.twoFADisableCode = '';
+        this.twoFAMsgError = false; this.twoFAMsg = '2FA desativado.';
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.twoFABusy = false; this.twoFAMsgError = true;
+        this.twoFAMsg = err?.error?.error?.message || 'Não foi possível desativar.';
         this.cdr.detectChanges();
       }
     });

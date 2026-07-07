@@ -26,14 +26,42 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) { }
 
-  login(credentials: { email: string, senha: string }): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${API_URL}/login`, credentials).pipe(
+  // Resposta pode ser o login completo OU um pedido de 2FA (requires2FA + tempToken)
+  login(credentials: { email: string, senha: string }): Observable<LoginResponse & { requires2FA?: boolean; tempToken?: string }> {
+    return this.http.post<LoginResponse & { requires2FA?: boolean; tempToken?: string }>(`${API_URL}/login`, credentials).pipe(
+      tap(response => {
+        if (response.token) {
+          this.saveToken(response.token);
+          localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+        }
+      })
+    );
+  }
+
+  // === 2FA ===
+  login2FA(tempToken: string, codigo: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${API_URL}/login/2fa`, { tempToken, codigo }).pipe(
       tap(response => {
         this.saveToken(response.token);
-        // SALVA OS DADOS DO USUÁRIO
         localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
       })
     );
+  }
+
+  get2FAStatus(): Observable<{ enabled: boolean }> {
+    return this.http.get<{ enabled: boolean }>(`${API_URL}/usuarios/2fa/status`);
+  }
+
+  setup2FA(): Observable<{ qrCode: string; secret: string }> {
+    return this.http.post<{ qrCode: string; secret: string }>(`${API_URL}/usuarios/2fa/setup`, {});
+  }
+
+  enable2FA(codigo: string): Observable<{ enabled: boolean }> {
+    return this.http.post<{ enabled: boolean }>(`${API_URL}/usuarios/2fa/enable`, { codigo });
+  }
+
+  disable2FA(senha: string, codigo: string): Observable<{ enabled: boolean }> {
+    return this.http.post<{ enabled: boolean }>(`${API_URL}/usuarios/2fa/disable`, { senha, codigo });
   }
 
   register(data: RegisterData): Observable<any> {

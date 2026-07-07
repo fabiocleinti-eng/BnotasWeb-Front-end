@@ -443,6 +443,21 @@ html, body {
 .btn-drawer-action.danger { background: #c62828; color: #fff; }
 .btn-drawer-action.danger:hover { background: #b71c1c; }
 
+/* 2FA — verificação em duas etapas */
+.twofa-section { margin-top: 26px; padding-top: 16px; border-top: 1px solid #eee; }
+.twofa-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.twofa-status { font-size: 0.7rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; background: #f5f5f5; color: #999; letter-spacing: 0.04em; }
+.twofa-status.on { background: #e8f5e9; color: #2e7d32; }
+.twofa-desc { font-size: 0.83rem; color: #666; line-height: 1.5; margin: 6px 0 10px; }
+.twofa-setup { margin-top: 8px; }
+.twofa-qr { display: block; width: 180px; height: 180px; margin: 0 auto 8px; border: 1px solid #eee; border-radius: 12px; }
+.twofa-secret { font-size: 0.75rem; color: #888; text-align: center; word-break: break-all; }
+.twofa-secret code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+.twofa-code-input { text-align: center; font-size: 1.2rem; letter-spacing: 6px; font-weight: 700; margin-top: 6px; }
+.twofa-actions { display: flex; gap: 8px; }
+.twofa-actions .btn-drawer-action { margin-top: 12px; }
+.twofa-actions .btn-drawer-action:not(.primary) { background: #f0f0f0; color: #555; }
+
 /* Zona de perigo — excluir conta (LGPD) */
 .danger-zone { margin-top: 28px; padding-top: 14px; border-top: 1px dashed #ffcdd2; }
 .danger-title { font-size: 0.8rem; font-weight: 700; color: #c62828; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }

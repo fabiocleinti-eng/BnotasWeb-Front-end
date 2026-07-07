@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
@@ -7,7 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -18,6 +18,12 @@ export class LoginComponent implements OnInit {
   
   isLoginMode = true;
   isRecoverMode = false;
+
+  // === 2FA ===
+  is2FAMode = false;
+  tempToken2FA = '';
+  codigo2FA = '';
+  verifying2FA = false;
 
   passwordCriteria = {
     minLength: false,
@@ -90,9 +96,41 @@ export class LoginComponent implements OnInit {
     else localStorage.removeItem('bnotas_saved_email');
     
     this.authService.login({ email, senha }).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: (res) => {
+        if (res.requires2FA && res.tempToken) {
+          // Conta com 2FA: pede o código do app autenticador
+          this.is2FAMode = true;
+          this.tempToken2FA = res.tempToken;
+          this.codigo2FA = '';
+          this.errorMessage = null;
+          return;
+        }
+        this.router.navigate(['/']);
+      },
       error: (err: any) => this.errorMessage = err.error?.error?.message || 'Erro ao logar.'
     });
+  }
+
+  onVerify2FA(): void {
+    if (this.codigo2FA.length !== 6 || this.verifying2FA) return;
+    this.verifying2FA = true;
+    this.errorMessage = null;
+    this.authService.login2FA(this.tempToken2FA, this.codigo2FA).subscribe({
+      next: () => this.router.navigate(['/']),
+      error: (err: any) => {
+        this.verifying2FA = false;
+        this.errorMessage = err.error?.error?.message || 'Código inválido.';
+        // Token temporário expirado: volta para a tela de senha
+        if (err.error?.error?.code === 'TEMP_TOKEN_EXPIRED') this.cancel2FA();
+      }
+    });
+  }
+
+  cancel2FA(): void {
+    this.is2FAMode = false;
+    this.tempToken2FA = '';
+    this.codigo2FA = '';
+    this.verifying2FA = false;
   }
 
   onRegisterSubmit(): void {

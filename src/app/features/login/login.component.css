@@ -50,3 +50,7 @@ h2 { font-size: 2rem; letter-spacing: 2px; margin-bottom: 30px; font-weight: 600
 /* Link para termos de uso (LGPD) */
 .legal-link { display: block; text-align: center; margin-top: 14px; font-size: 0.75rem; color: #999; text-decoration: none; }
 .legal-link:hover { color: #6200ea; text-decoration: underline; }
+
+/* Passo 2FA no login */
+.twofa-input { text-align: center; font-size: 1.4rem; letter-spacing: 8px; font-weight: 700; }
+.back-link { display: block; text-align: center; margin-top: 12px; font-size: 0.85rem; color: #666; cursor: pointer; text-decoration: underline; }
