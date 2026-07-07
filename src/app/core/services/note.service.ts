@@ -11,8 +11,23 @@ export class NoteService {
 
   constructor(private http: HttpClient) { }
 
-  getNotes(): Observable<Note[]> {
-    return this.http.get<Note[]>(`${API_URL}/anotacoes`);
+  // Busca feita no SERVIDOR quando q é informado
+  getNotes(q?: string): Observable<Note[]> {
+    const params = q && q.trim() ? { params: { q: q.trim() } } : {};
+    return this.http.get<Note[]>(`${API_URL}/anotacoes`, params);
+  }
+
+  // === COMPARTILHAR POR LINK ===
+  shareNote(id: number): Observable<{ shareToken: string }> {
+    return this.http.post<{ shareToken: string }>(`${API_URL}/anotacoes/${id}/share`, {});
+  }
+
+  unshareNote(id: number): Observable<{ shareToken: null }> {
+    return this.http.delete<{ shareToken: null }>(`${API_URL}/anotacoes/${id}/share`);
+  }
+
+  getPublicNote(token: string): Observable<{ titulo: string; cor: string; dataModificacao: string; conteudo: string }> {
+    return this.http.get<any>(`${API_URL}/public/anotacoes/${token}`);
   }
 
   createNote(note: Partial<Note> & { titulo: string; conteudo: string; favorita: boolean }): Observable<Note> {

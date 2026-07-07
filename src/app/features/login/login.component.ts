@@ -112,7 +112,7 @@ export class LoginComponent implements OnInit {
   }
 
   onVerify2FA(): void {
-    if (this.codigo2FA.length !== 6 || this.verifying2FA) return;
+    if (this.codigo2FA.length < 6 || this.verifying2FA) return;
     this.verifying2FA = true;
     this.errorMessage = null;
     this.authService.login2FA(this.tempToken2FA, this.codigo2FA).subscribe({

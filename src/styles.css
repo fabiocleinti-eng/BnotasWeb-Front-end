@@ -112,3 +112,60 @@ select:focus-visible {
   color: #999;
 }
 
+
+/* ============================================================
+   MODO ESCURO (classe dark-theme no <body>)
+   Post-its mantêm as cores — só as superfícies escurecem
+   ============================================================ */
+body.dark-theme { background: #15151d; color: #e0e0e0; }
+body.dark-theme .dashboard-container,
+body.dark-theme .main-content,
+body.dark-theme .workspace-scroll { background: #15151d !important; }
+body.dark-theme .sidebar,
+body.dark-theme .sidebar-header-wrapper,
+body.dark-theme .sidebar-footer,
+body.dark-theme .group-header { background: #1e1e29 !important; border-color: #2c2c3a !important; }
+body.dark-theme .sidebar-header h2, body.dark-theme .group-title { color: #d0d0d8 !important; }
+body.dark-theme .search-input { background: #2a2a38 !important; border-color: #3a3a4a !important; color: #e0e0e0; }
+body.dark-theme .workspace-dock-bar { background: #1e1e29 !important; border-color: #2c2c3a !important; }
+body.dark-theme .welcome-screen h1, body.dark-theme .welcome-screen p { color: #d0d0d8; }
+body.dark-theme .postit-card,
+body.dark-theme .postit-header,
+body.dark-theme .postit-content-area,
+body.dark-theme .postit-footer,
+body.dark-theme .postit-meta { background: #23232f !important; border-color: #33334a !important; }
+body.dark-theme .editor-toolbar { background: #1e1e29 !important; border-color: #33334a !important; }
+body.dark-theme .btn-tool { background: #2a2a38; border-color: #3a3a4a; color: #d0d0d8; }
+body.dark-theme .postit-title-input, body.dark-theme .ProseMirror { color: #e8e8f0 !important; }
+body.dark-theme .btn-icon { color: #b0b0c0; }
+body.dark-theme .btn-icon:hover { background: #33334a; color: #fff; }
+body.dark-theme .user-drawer, body.dark-theme .drawer-content { background: #1e1e29 !important; }
+body.dark-theme .drawer-tabs { background: #17171f !important; border-color: #2c2c3a; }
+body.dark-theme .drawer-tabs button { color: #b0b0c0; }
+body.dark-theme .drawer-tabs button.active { background: #2a2a38; color: #b794f6; }
+body.dark-theme .drawer-label, body.dark-theme .twofa-desc, body.dark-theme .plans-intro { color: #c0c0d0 !important; }
+body.dark-theme .drawer-input, body.dark-theme .drawer-textarea { background: #2a2a38 !important; border-color: #3a3a4a !important; color: #e0e0e0 !important; }
+body.dark-theme .plan-card { background: #23232f !important; border-color: #33334a !important; }
+body.dark-theme .plan-name { color: #e0e0e8; }
+body.dark-theme .trash-modal, body.dark-theme .unlock-modal, body.dark-theme .modal-content.atencao-maxima { background: #23232f !important; }
+body.dark-theme .trash-modal-header h2, body.dark-theme .unlock-title { color: #e0e0e8; }
+body.dark-theme .trash-item { background: #2a2a38 !important; border-color: #3a3a4a !important; }
+body.dark-theme .trash-item-title { color: #e0e0e8; }
+body.dark-theme .drawer-footer { background: #17171f !important; border-color: #2c2c3a; }
+body.dark-theme .deck-card:not([style*="background"]) { background: #2a2a38; }
+body.dark-theme .protect-panel { background: #2a2338 !important; border-color: #4a3a5a !important; }
+body.dark-theme .protect-title { color: #d0b0f0; }
+body.dark-theme .protect-option { color: #c0c0d0; }
+
+/* Códigos de backup 2FA */
+.backup-codes-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 12px; margin-top: 12px; }
+.backup-codes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; }
+.backup-codes-grid code { background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85rem; letter-spacing: 1px; }
+body.dark-theme .backup-codes-box { background: #33301f; border-color: #5a5030; }
+body.dark-theme .backup-codes-grid code { background: #2a2a38; border-color: #3a3a4a; color: #e0e0e0; }
+
+/* Extras do perfil */
+.profile-extras { margin-top: 10px; display: flex; flex-direction: column; gap: 0; }
+.profile-extras .btn-drawer-action { background: #f5f5f5; color: #444; margin-top: 10px; }
+.profile-extras .btn-drawer-action:hover { background: #eee; }
+body.dark-theme .profile-extras .btn-drawer-action { background: #2a2a38; color: #d0d0d8; }

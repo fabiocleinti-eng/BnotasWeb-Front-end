@@ -16,6 +16,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reset-password/reset-password.component')
       .then(m => m.ResetPasswordComponent)
   },
+  // ROTA PÚBLICA: Nota compartilhada por link (somente leitura)
+  {
+    path: 'n/:token',
+    loadComponent: () => import('./features/public-note/public-note.component')
+      .then(m => m.PublicNoteComponent)
+  },
   // ROTA PÚBLICA: Termos de Uso e Privacidade (LGPD)
   {
     path: 'legal',

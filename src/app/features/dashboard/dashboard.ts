@@ -107,6 +107,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   twoFABusy: boolean = false;
   twoFAMsg: string = '';
   twoFAMsgError: boolean = false;
+  twoFABackupCodes: string[] = []; // mostrados UMA vez após ativar
 
   // === EXCLUIR CONTA (LGPD) ===
   showDeleteAccount: boolean = false;
@@ -169,6 +170,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadSubscription();
     this.loadTrash();
     this.load2FAStatus();
+    this.initDarkMode();
+    this.loadProfileFromServer();
     this.loadScratchpad();
     this.loadNotes();
     this.availableColors.forEach(c => this.stackIndices[c] = 0);
@@ -287,9 +290,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.twoFACode.length !== 6 || this.twoFABusy) return;
     this.twoFABusy = true; this.twoFAMsg = '';
     this.authService.enable2FA(this.twoFACode).subscribe({
-      next: () => {
+      next: (res) => {
         this.twoFABusy = false; this.twoFAEnabled = true; this.twoFASetup = null;
-        this.twoFAMsgError = false; this.twoFAMsg = '2FA ativado! Seu login agora pede o código do app. ✓';
+        this.twoFABackupCodes = res.backupCodes || [];
+        this.twoFAMsgError = false; this.twoFAMsg = '2FA ativado! Guarde os códigos de backup abaixo. ✓';
         this.cdr.detectChanges();
       },
       error: err => {
@@ -301,6 +305,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   cancel2FASetup() { this.twoFASetup = null; this.twoFACode = ''; this.twoFAMsg = ''; }
+
+  copyBackupCodes() {
+    navigator.clipboard?.writeText(this.twoFABackupCodes.join('\n')).then(() => alert('Códigos copiados! Guarde em local seguro.'));
+  }
+
+  dismissBackupCodes() {
+    if (confirm('Você salvou os códigos? Eles NÃO serão mostrados de novo.')) this.twoFABackupCodes = [];
+  }
 
   disable2FA() {
     if (!this.twoFADisablePwd || this.twoFADisableCode.length !== 6 || this.twoFABusy) return;
@@ -461,17 +473,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } catch (_) {}
   }
 
+  // Perfil agora vive no SERVIDOR (localStorage vira só cache)
+  loadProfileFromServer(): void {
+    this.authService.getPerfil().subscribe({
+      next: p => {
+        if (p.nome) { this.userProfile.name = p.nome; this.userName = p.nome; }
+        if (p.bio != null) this.userProfile.bio = p.bio;
+        if (p.avatarUrl) this.userProfile.avatarUrl = p.avatarUrl;
+        this.cdr.detectChanges();
+      },
+      error: () => {} // sem conexão: fica com o cache local
+    });
+  }
+
   saveProfile(): void {
     if (!this.userProfile.avatarUrl?.trim()) {
       this.userProfile.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.userProfile.name || 'User')}&background=6200ea&color=fff`;
     }
-    const key = this.getProfileKey();
     const data = {
-      name: this.userProfile.name,
+      nome: this.userProfile.name,
       bio: this.userProfile.bio,
       avatarUrl: this.userProfile.avatarUrl
     };
-    localStorage.setItem(key, JSON.stringify(data));
+    this.authService.updatePerfil(data).subscribe({
+      next: () => {},
+      error: () => alert('Perfil salvo apenas neste navegador (sem conexão com o servidor).')
+    });
+    localStorage.setItem(this.getProfileKey(), JSON.stringify({ name: data.nome, bio: data.bio, avatarUrl: data.avatarUrl }));
     this.userName = this.userProfile.name;
     this.cdr.detectChanges();
     this.closeDrawer();
@@ -782,5 +810,138 @@ export class DashboardComponent implements OnInit, OnDestroy {
     else{this.criticalNotes.forEach(x=>{if(x.id)this.noteService.updateNote(x.id,{dataLembrete:null}).subscribe()});this.criticalNotes=[];this.showUrgentModal=false;setTimeout(()=>this.loadNotes(),500);} 
   }
   snoozeTask() { this.alertManager.snooze(); this.showUrgentModal = false; }
-  onSearch(event: any) { const t = event.target.value.toLowerCase(); this.noteService.getNotes().subscribe(all => { if(!t) { this.totalNotes=all.length; this.organizeNotes(all); return; } this.organizeNotes(all.filter(n=>(n.titulo?.toLowerCase().includes(t)||n.conteudo?.toLowerCase().includes(t)))); }); }
+  // Busca no SERVIDOR com debounce (não baixa mais todas as notas)
+  private searchTimer: any = null;
+  onSearch(event: any) {
+    const t = event.target.value;
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.noteService.getNotes(t).subscribe(notes => {
+        if (!t) this.totalNotes = notes.length;
+        this.organizeNotes(notes);
+        this.cdr.detectChanges();
+      });
+    }, 300);
+  }
+
+  // ==========================================
+  // MODO ESCURO
+  // ==========================================
+  isDarkMode: boolean = false;
+
+  initDarkMode() {
+    this.isDarkMode = localStorage.getItem('bnotas_dark') === '1';
+    document.body.classList.toggle('dark-theme', this.isDarkMode);
+  }
+
+  toggleDarkMode() {
+    this.isDarkMode = !this.isDarkMode;
+    localStorage.setItem('bnotas_dark', this.isDarkMode ? '1' : '0');
+    document.body.classList.toggle('dark-theme', this.isDarkMode);
+  }
+
+  // ==========================================
+  // EXPORTAR NOTAS (.md)
+  // ==========================================
+  private htmlToMarkdown(html: string): string {
+    let s = html || '';
+    s = s.replace(/<(strong|b)>(.*?)<\/\1>/gi, '**$2**')
+         .replace(/<(em|i)>(.*?)<\/\1>/gi, '*$2*')
+         .replace(/<u>(.*?)<\/u>/gi, '_$1_')
+         .replace(/<li[^>]*data-checked="true"[^>]*>/gi, '\n- [x] ')
+         .replace(/<li[^>]*data-checked="false"[^>]*>/gi, '\n- [ ] ')
+         .replace(/<li[^>]*>/gi, '\n- ')
+         .replace(/<\/p>|<br\s*\/?>/gi, '\n');
+    const div = document.createElement('div');
+    div.innerHTML = s;
+    return (div.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  private downloadFile(nome: string, conteudo: string) {
+    const blob = new Blob([conteudo], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  exportNote(n: any) {
+    if (this.isFreePlan) { alert('Exportar notas é um recurso dos planos pagos. Faça upgrade na aba Planos. 🚀'); return; }
+    const md = `# ${n.titulo || 'Sem título'}\n\n${this.htmlToMarkdown(n.conteudo)}\n`;
+    this.downloadFile(`${(n.titulo || 'nota').replace(/[^\w\sà-ú-]/gi, '')}.md`, md);
+  }
+
+  exportAllNotes() {
+    if (this.isFreePlan) { alert('Exportar notas é um recurso dos planos pagos. Faça upgrade na aba Planos. 🚀'); return; }
+    this.noteService.getNotes().subscribe(notes => {
+      const md = notes.map(n => `# ${n.titulo || 'Sem título'}\n\n${n.protegida ? '_(nota protegida — conteúdo não exportado)_' : this.htmlToMarkdown(n.conteudo)}`).join('\n\n---\n\n');
+      this.downloadFile('minhas-notas-bnotasweb.md', md + '\n');
+    });
+  }
+
+  // ==========================================
+  // DITADO POR VOZ (plano Pro)
+  // ==========================================
+  voiceActiveFor: any = null;
+  private recognition: any = null;
+
+  toggleVoice(n: any) {
+    if (this.currentPlanId !== 'pro') { alert('Ditado por voz é exclusivo do plano Pro. Faça upgrade na aba Planos. 🎤'); return; }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert('Seu navegador não suporta ditado por voz. Use Chrome ou Edge.'); return; }
+
+    if (this.voiceActiveFor === n) {
+      this.recognition?.stop();
+      this.voiceActiveFor = null;
+      return;
+    }
+    this.recognition?.stop();
+
+    const r = new SR();
+    r.lang = 'pt-BR';
+    r.continuous = true;
+    r.interimResults = false;
+    r.onresult = (e: any) => {
+      const texto = e.results[e.results.length - 1][0].transcript;
+      n.editor?.commands.insertContent(texto + ' ');
+      n.conteudo = n.editor?.getHTML();
+    };
+    r.onerror = () => { this.voiceActiveFor = null; this.cdr.detectChanges(); };
+    r.onend = () => { if (this.voiceActiveFor === n) { this.voiceActiveFor = null; this.cdr.detectChanges(); } };
+    r.start();
+    this.recognition = r;
+    this.voiceActiveFor = n;
+  }
+
+  // ==========================================
+  // COMPARTILHAR POR LINK
+  // ==========================================
+  shareNote(n: any) {
+    if (!n.id) { alert('Salve a nota primeiro.'); return; }
+    if (n.protegida) { alert('Notas protegidas por senha não podem ser compartilhadas.'); return; }
+
+    if (n.shareToken) {
+      const copiar = confirm('Esta nota já tem um link público.\n\nOK = copiar o link novamente\nCancelar = REVOGAR o link (ninguém mais acessa)');
+      if (copiar) {
+        this.copyShareLink(n.shareToken);
+      } else {
+        this.noteService.unshareNote(n.id).subscribe(() => { n.shareToken = undefined; this.loadNotes(); alert('Link revogado. A nota voltou a ser privada.'); });
+      }
+      return;
+    }
+
+    this.noteService.shareNote(n.id).subscribe({
+      next: res => { n.shareToken = res.shareToken; this.copyShareLink(res.shareToken); this.loadNotes(); },
+      error: err => alert(err?.error?.error?.message || 'Não foi possível gerar o link.')
+    });
+  }
+
+  private copyShareLink(token: string) {
+    const url = `${location.origin}/n/${token}`;
+    navigator.clipboard?.writeText(url).then(
+      () => alert('Link copiado! 🔗\n\nQualquer pessoa com este link pode LER a nota (sem editar):\n' + url),
+      () => alert('Link público da nota:\n' + url)
+    );
+  }
 }

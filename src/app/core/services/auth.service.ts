@@ -56,8 +56,17 @@ export class AuthService {
     return this.http.post<{ qrCode: string; secret: string }>(`${API_URL}/usuarios/2fa/setup`, {});
   }
 
-  enable2FA(codigo: string): Observable<{ enabled: boolean }> {
-    return this.http.post<{ enabled: boolean }>(`${API_URL}/usuarios/2fa/enable`, { codigo });
+  enable2FA(codigo: string): Observable<{ enabled: boolean; backupCodes?: string[] }> {
+    return this.http.post<{ enabled: boolean; backupCodes?: string[] }>(`${API_URL}/usuarios/2fa/enable`, { codigo });
+  }
+
+  // === PERFIL (no servidor) ===
+  getPerfil(): Observable<{ nome: string; sobrenome: string; email: string; telefone?: string; bio?: string; avatarUrl?: string }> {
+    return this.http.get<any>(`${API_URL}/usuarios/perfil`);
+  }
+
+  updatePerfil(data: { nome?: string; bio?: string | null; avatarUrl?: string | null }): Observable<any> {
+    return this.http.put(`${API_URL}/usuarios/perfil`, data);
   }
 
   disable2FA(senha: string, codigo: string): Observable<{ enabled: boolean }> {

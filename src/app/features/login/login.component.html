@@ -6,11 +6,11 @@
       <div *ngIf="is2FAMode" class="twofa-step">
         <p class="recover-text">🔐 Sua conta tem verificação em duas etapas.<br>Digite o código de 6 dígitos do seu app autenticador:</p>
         <div class="input-group">
-          <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigo2FA"
+          <input type="text" inputmode="numeric" maxlength="8" [(ngModel)]="codigo2FA"
                  [ngModelOptions]="{standalone: true}" placeholder="000000"
                  class="rounded-input twofa-input" (keyup.enter)="onVerify2FA()" autocomplete="one-time-code">
         </div>
-        <button type="button" class="btn-submit" [disabled]="codigo2FA.length !== 6 || verifying2FA" (click)="onVerify2FA()">
+        <button type="button" class="btn-submit" [disabled]="codigo2FA.length < 6 || verifying2FA" (click)="onVerify2FA()">
           {{ verifying2FA ? 'VERIFICANDO...' : 'CONFIRMAR' }}
         </button>
         <a class="back-link" (click)="cancel2FA()">Voltar</a>

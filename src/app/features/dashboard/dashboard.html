@@ -181,6 +181,7 @@
                         <div class="vertical-separator"></div>
                         <button (click)="openNote.editor.chain().focus().toggleBulletList().run()" [class.active-tool]="openNote.editor.isActive('bulletList')" class="btn-tool">UL</button>
                         <button (click)="openNote.editor.chain().focus().toggleTaskList().run()" [class.active-tool]="openNote.editor.isActive('taskList')" class="btn-tool" title="Checklist">☑</button>
+                        <button (click)="toggleVoice(openNote)" [class.active-tool]="voiceActiveFor === openNote" class="btn-tool" title="Ditado por voz (Pro)">🎤</button>
                     </div>
   
                     <div class="postit-content-area"><div tiptap [editor]="openNote.editor" [(ngModel)]="openNote.conteudo"></div></div>
@@ -188,6 +189,8 @@
                     <div class="postit-footer">
                         <div class="colors-row"><div *ngFor="let color of availableColors" class="color-circle" [style.background]="color" [class.selected]="openNote.cor === color" (click)="changeNoteColor(openNote, color)"></div></div>
                         <div class="footer-btns">
+                            <button class="btn-icon" (click)="exportNote(openNote)" title="Exportar (.md)">📤</button>
+                            <button class="btn-icon" (click)="shareNote(openNote)" [class.active]="openNote.shareToken" title="Compartilhar por link">🔗</button>
                             <button class="btn-icon-trash" (click)="deleteNote(openNote)">🗑️</button>
                             <button class="btn-mini save" (click)="saveNote(openNote)" [disabled]="saveInProgress">
               <span *ngIf="!saveInProgress">💾</span><span *ngIf="saveInProgress" class="btn-saving">...</span>
@@ -246,6 +249,13 @@
         <label class="drawer-label">Bio (opcional)</label>
         <textarea [(ngModel)]="userProfile.bio" class="drawer-textarea" placeholder="Uma frase sobre você..." rows="3"></textarea>
         <button type="button" class="btn-drawer-action primary" (click)="saveProfile()">Salvar</button>
+
+        <div class="profile-extras">
+          <button type="button" class="btn-drawer-action" (click)="toggleDarkMode()">
+            {{ isDarkMode ? '☀️ Modo claro' : '🌙 Modo escuro' }}
+          </button>
+          <button type="button" class="btn-drawer-action" (click)="exportAllNotes()">📤 Exportar todas as notas (.md)</button>
+        </div>
       </div>
       <div *ngIf="activeDrawerTab === 'security'" class="tab-pane fade-in">
         <div class="security-alert">🔒 Altere sua senha de acesso. Ela deve ser forte para proteger suas notas.</div>
@@ -302,6 +312,18 @@
               <button type="button" class="btn-drawer-action primary" [disabled]="twoFACode.length !== 6 || twoFABusy" (click)="confirm2FA()">
                 {{ twoFABusy ? 'Verificando...' : 'Confirmar e ativar' }}
               </button>
+            </div>
+          </div>
+
+          <!-- Códigos de backup (mostrados UMA vez após ativar) -->
+          <div *ngIf="twoFABackupCodes.length > 0" class="backup-codes-box">
+            <p class="twofa-desc"><b>⚠️ Códigos de backup — salve agora!</b> Se perder o celular, cada código entra <b>uma única vez</b>:</p>
+            <div class="backup-codes-grid">
+              <code *ngFor="let c of twoFABackupCodes">{{ c }}</code>
+            </div>
+            <div class="twofa-actions">
+              <button type="button" class="btn-drawer-action" (click)="copyBackupCodes()">Copiar códigos</button>
+              <button type="button" class="btn-drawer-action primary" (click)="dismissBackupCodes()">Já salvei</button>
             </div>
           </div>
 
