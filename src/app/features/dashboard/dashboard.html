@@ -49,7 +49,7 @@
                    [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
                    [style.background]="getCardBackground(note.cor || '#fff')" [style.border-left-color]="note.cor || '#ccc'">
                     <div class="card-content">
-                        <div class="card-top-row"><div class="note-title">{{ note.titulo || 'Sem Título' }}</div></div>
+                        <div class="card-top-row"><div class="note-title"><span *ngIf="note.protegida">🔒 </span>{{ note.titulo || 'Sem Título' }}</div></div>
                         <div class="note-preview">{{ getPreview(note) }}</div>
                         <div class="card-bottom"><span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span></div>
                     </div>
@@ -112,10 +112,41 @@
                         <div class="header-icons-row">
                             <button class="btn-icon" (click)="toggleMinimize(openNote)">➖</button>
                             <button class="btn-icon" (click)="toggleDateEdit(openNote)" [class.active]="openNote.dataLembrete">⏰</button>
+                            <button class="btn-icon" (click)="toggleProtectPanel(openNote)" [class.active]="openNote.protegida" title="Proteger com senha">🔒</button>
                             <button class="btn-icon" (click)="closeNote(openNote)">✖</button>
                         </div>
                     </div>
   
+                    <div class="protect-panel" *ngIf="openNote.showProtectPanel">
+                        <div *ngIf="!openNote.protegida">
+                            <div class="protect-title">🔒 Proteger esta nota com senha</div>
+                            <label class="protect-option">
+                                <input type="radio" name="protMode-{{openNote.id}}" value="propria" [(ngModel)]="openNote.protMode">
+                                Criar uma senha exclusiva para esta nota <span class="protect-recomendado">(recomendado)</span>
+                            </label>
+                            <label class="protect-option">
+                                <input type="radio" name="protMode-{{openNote.id}}" value="conta" [(ngModel)]="openNote.protMode">
+                                Usar a senha da minha conta
+                            </label>
+                            <div *ngIf="openNote.protMode === 'propria'" class="protect-inputs">
+                                <input type="password" [(ngModel)]="openNote.protPwd" placeholder="Senha da nota (mín. 4)" class="protect-input" autocomplete="new-password">
+                                <input type="password" [(ngModel)]="openNote.protPwd2" placeholder="Confirmar senha" class="protect-input" autocomplete="new-password">
+                            </div>
+                            <div class="protect-msg" *ngIf="openNote.protMsg">{{ openNote.protMsg }}</div>
+                            <button type="button" class="btn-protect" [disabled]="openNote.protBusy" (click)="protectNote(openNote)">
+                                {{ openNote.protBusy ? 'Protegendo...' : 'Proteger nota' }}
+                            </button>
+                        </div>
+                        <div *ngIf="openNote.protegida">
+                            <div class="protect-title">🔓 Remover proteção desta nota</div>
+                            <input type="password" [(ngModel)]="openNote.protCurrentPwd" placeholder="Senha atual da nota" class="protect-input" autocomplete="current-password">
+                            <div class="protect-msg" *ngIf="openNote.protMsg">{{ openNote.protMsg }}</div>
+                            <button type="button" class="btn-protect remove" [disabled]="openNote.protBusy" (click)="unprotectNote(openNote)">
+                                {{ openNote.protBusy ? 'Removendo...' : 'Remover proteção' }}
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="postit-meta" *ngIf="openNote.isDateEditing">
                         <label class="date-label">Data: <input type="datetime-local" [ngModel]="openNote.dataLembrete" (ngModelChange)="updateReminderDate(openNote, $event)" class="date-input"></label>
                     </div>
@@ -296,6 +327,23 @@
     </footer>
   </div>
   
+  <div class="modal-overlay" *ngIf="unlockTarget" (click)="cancelUnlock()">
+    <div class="modal-content unlock-modal" (click)="$event.stopPropagation()">
+      <div class="unlock-icon">🔒</div>
+      <h2 class="unlock-title">Nota protegida</h2>
+      <p class="unlock-sub">"{{ unlockTarget.titulo || 'Sem título' }}" — digite a senha para abrir:</p>
+      <input type="password" [(ngModel)]="unlockPwd" class="drawer-input" placeholder="Senha da nota"
+             (keyup.enter)="confirmUnlock()" autocomplete="off">
+      <div class="drawer-feedback error" *ngIf="unlockMsg">{{ unlockMsg }}</div>
+      <div class="unlock-actions">
+        <button type="button" class="btn-unlock-cancel" (click)="cancelUnlock()">Cancelar</button>
+        <button type="button" class="btn-unlock" [disabled]="!unlockPwd || unlockBusy" (click)="confirmUnlock()">
+          {{ unlockBusy ? 'Verificando...' : 'Desbloquear' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="isTrashOpen" (click)="closeTrash()">
     <div class="modal-content trash-modal" (click)="$event.stopPropagation()">
       <div class="trash-modal-header">

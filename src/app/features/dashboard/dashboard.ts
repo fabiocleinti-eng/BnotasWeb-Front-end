@@ -92,6 +92,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   pwdMsg: string = '';
   pwdMsgError: boolean = false;
 
+  // === NOTAS PROTEGIDAS ===
+  unlockTarget: Note | null = null;   // nota aguardando senha para abrir
+  unlockPwd: string = '';
+  unlockBusy: boolean = false;
+  unlockMsg: string = '';
+
   // === EXCLUIR CONTA (LGPD) ===
   showDeleteAccount: boolean = false;
   deleteAccountPwd: string = '';
@@ -502,6 +508,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   getCardBackground(color: string): string { return color; }
   
   getPreview(note: Note): string {
+      if (note.protegida) return '🔒 Conteúdo protegido';
       if (!note.conteudo) return 'Nova nota...';
       const tempDiv = document.createElement('div');
       let htmlTratado = note.conteudo.replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ');
@@ -531,12 +538,99 @@ export class DashboardComponent implements OnInit, OnDestroy {
   openNote(note: Note) {
       const existing = this.openNotes.find(n => n.id === note.id);
       if (existing) {
-        existing.minimized = false; 
+        existing.minimized = false;
+        return;
+      }
+      // Nota protegida: o conteúdo não veio na listagem — pede a senha primeiro
+      if (note.protegida) {
+        this.unlockTarget = note;
+        this.unlockPwd = '';
+        this.unlockMsg = '';
+        if (this.isMobileSidebarOpen) this.isMobileSidebarOpen = false;
         return;
       }
       const noteCopy = { ...note, isDateEditing: !!note.dataLembrete };
       this.addNoteToOpenList(noteCopy);
       if (this.isMobileSidebarOpen) this.isMobileSidebarOpen = false;
+  }
+
+  // ==========================================
+  // NOTAS PROTEGIDAS
+  // ==========================================
+  cancelUnlock() { this.unlockTarget = null; this.unlockPwd = ''; this.unlockMsg = ''; }
+
+  confirmUnlock() {
+    if (!this.unlockTarget?.id || !this.unlockPwd || this.unlockBusy) return;
+    this.unlockBusy = true;
+    this.unlockMsg = '';
+    this.noteService.verifyNotePassword(this.unlockTarget.id, this.unlockPwd).subscribe({
+      next: res => {
+        this.unlockBusy = false;
+        if (res.valid && res.note) {
+          const noteCopy = { ...res.note, isDateEditing: !!res.note.dataLembrete };
+          this.addNoteToOpenList(noteCopy);
+          this.cancelUnlock();
+        } else {
+          this.unlockMsg = 'Senha incorreta.';
+        }
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.unlockBusy = false;
+        this.unlockMsg = err?.error?.error?.message || 'Erro ao verificar a senha.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleProtectPanel(n: any) {
+    if (!n.id) { alert('Salve a nota primeiro para poder protegê-la.'); return; }
+    n.showProtectPanel = !n.showProtectPanel;
+    n.protMode = n.protMode || 'propria'; // recomendado: senha exclusiva
+    n.protPwd = ''; n.protPwd2 = ''; n.protCurrentPwd = ''; n.protMsg = '';
+  }
+
+  protectNote(n: any) {
+    if (n.protBusy) return;
+    const body: any = {};
+    if (n.protMode === 'conta') {
+      body.usarSenhaConta = true;
+    } else {
+      if (!n.protPwd || n.protPwd.length < 4) { n.protMsg = 'A senha da nota deve ter pelo menos 4 caracteres.'; return; }
+      if (n.protPwd !== n.protPwd2) { n.protMsg = 'As senhas não coincidem.'; return; }
+      body.senha = n.protPwd;
+    }
+    n.protBusy = true; n.protMsg = '';
+    this.noteService.updateNote(n.id, body).subscribe({
+      next: () => {
+        n.protBusy = false; n.protegida = true; n.showProtectPanel = false;
+        this.loadNotes();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        n.protBusy = false;
+        n.protMsg = err?.error?.error?.message || 'Não foi possível proteger a nota.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  unprotectNote(n: any) {
+    if (n.protBusy) return;
+    if (!n.protCurrentPwd) { n.protMsg = 'Digite a senha atual da nota para remover a proteção.'; return; }
+    n.protBusy = true; n.protMsg = '';
+    this.noteService.updateNote(n.id, { senha: null, senhaAtualNota: n.protCurrentPwd } as any).subscribe({
+      next: () => {
+        n.protBusy = false; n.protegida = false; n.showProtectPanel = false;
+        this.loadNotes();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        n.protBusy = false;
+        n.protMsg = err?.error?.error?.message || 'Senha incorreta.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private addNoteToOpenList(note: any) {

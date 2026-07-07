@@ -35,6 +35,12 @@ export class NoteService {
     return this.http.delete<void>(`${API_URL}/anotacoes/${id}`);
   }
 
+  // === NOTAS PROTEGIDAS ===
+  // Verifica a senha; se correta, o servidor devolve a nota completa (com conteúdo)
+  verifyNotePassword(id: number, senha: string): Observable<{ valid: boolean; note?: Note }> {
+    return this.http.post<{ valid: boolean; note?: Note }>(`${API_URL}/anotacoes/${id}/verify-password`, { senha });
+  }
+
   // === LIXEIRA ===
   getTrash(): Observable<Note[]> {
     return this.http.get<Note[]>(`${API_URL}/anotacoes/trash`);

@@ -252,6 +252,34 @@ html, body {
 .universal-fab:active { transform: scale(0.95); }
 
 /* =========================================
+   NOTAS PROTEGIDAS
+   ========================================= */
+.protect-panel { background: #f3e5f5; border-bottom: 1px solid #e1bee7; padding: 14px 25px; }
+.protect-title { font-weight: 700; font-size: 0.9rem; color: #4a148c; margin-bottom: 10px; }
+.protect-option { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #555; margin-bottom: 6px; cursor: pointer; }
+.protect-recomendado { color: #2e7d32; font-weight: 600; font-size: 0.75rem; }
+.protect-inputs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.protect-input { flex: 1; min-width: 140px; padding: 8px 12px; border: 1px solid #d1c4e9; border-radius: 8px; font-size: 0.85rem; outline: none; }
+.protect-input:focus { border-color: #6200ea; }
+.protect-msg { color: #c62828; font-size: 0.8rem; margin-top: 8px; }
+.btn-protect { margin-top: 10px; background: #6200ea; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.btn-protect:hover { background: #5000c4; }
+.btn-protect.remove { background: #c62828; }
+.btn-protect.remove:hover { background: #b71c1c; }
+.btn-protect:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.unlock-modal { background: #fff; border-radius: 16px; width: 90%; max-width: 380px; padding: 2rem; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.3); }
+.unlock-icon { font-size: 3rem; }
+.unlock-title { margin: 8px 0 4px; font-size: 1.3rem; color: #333; }
+.unlock-sub { font-size: 0.88rem; color: #777; margin: 0 0 14px; }
+.unlock-actions { display: flex; gap: 10px; margin-top: 14px; }
+.btn-unlock { flex: 1; background: #6200ea; color: #fff; border: none; border-radius: 8px; padding: 11px; font-weight: 700; cursor: pointer; }
+.btn-unlock:hover { background: #5000c4; }
+.btn-unlock:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-unlock-cancel { flex: 1; background: #f0f0f0; color: #555; border: none; border-radius: 8px; padding: 11px; font-weight: 600; cursor: pointer; }
+.btn-unlock-cancel:hover { background: #e0e0e0; }
+
+/* =========================================
    SIDEBAR FOOTER — Lixeira + limite do plano
    ========================================= */
 .sidebar-footer {

@@ -14,4 +14,5 @@ export interface Note {
   deletado?: boolean; // Para lixeira
   dataExclusao?: Date; // Data de exclusão
   senha?: string; // Para notas protegidas (funcionalidade paga)
+  protegida?: boolean; // Indica nota protegida (conteúdo só vem após verificar a senha)
 }
