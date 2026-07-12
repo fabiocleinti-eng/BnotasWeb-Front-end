@@ -172,6 +172,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.load2FAStatus();
     this.initDarkMode();
     this.loadProfileFromServer();
+    this.handlePaymentReturn();
     this.loadScratchpad();
     this.loadNotes();
     this.availableColors.forEach(c => this.stackIndices[c] = 0);
@@ -220,16 +221,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return plan.features.map(f => this.featureLabels[f] || f);
   }
 
-  subscribeToPlan(plan: UserPlan) {
+  subscribeToPlan(plan: UserPlan, periodo: 'mensal' | 'anual' = 'mensal') {
     if (plan.id === this.currentPlanId || this.planActionInProgress) return;
     this.planActionInProgress = true;
     this.planMsg = '';
+
+    // Plano pago: cria a cobrança e envia o usuário ao checkout do Mercado Pago.
+    // O plano só ativa quando o pagamento for confirmado pelo servidor.
+    if (plan.price > 0) {
+      this.subscriptionService.checkout(plan.id, periodo).subscribe({
+        next: res => { window.location.href = res.checkoutUrl; },
+        error: err => {
+          this.planActionInProgress = false;
+          this.planMsgError = true;
+          this.planMsg = err?.error?.error?.message || 'Não foi possível iniciar o pagamento.';
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
+    // Voltar para o Gratuito (sem pagamento)
     this.subscriptionService.upgrade(plan.id).subscribe({
       next: sub => {
         this.currentSub = sub;
         this.planActionInProgress = false;
         this.planMsgError = false;
-        this.planMsg = plan.price > 0 ? `Plano ${plan.name} ativado! 🎉` : 'Plano alterado para Gratuito.';
+        this.planMsg = 'Plano alterado para Gratuito.';
         this.cdr.detectChanges();
       },
       error: err => {
@@ -239,6 +257,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // Retorno do checkout do Mercado Pago (?pagamento=sucesso&payment_id=...)
+  private handlePaymentReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('pagamento');
+    if (!status) return;
+
+    const paymentId = params.get('payment_id') || params.get('collection_id');
+    window.history.replaceState({}, '', '/dashboard'); // limpa a URL
+
+    if (status === 'sucesso' && paymentId) {
+      this.isDrawerOpen = true;
+      this.activeDrawerTab = 'plans';
+      this.planMsg = 'Confirmando seu pagamento...';
+      this.subscriptionService.confirmPayment(paymentId).subscribe({
+        next: res => {
+          this.planMsgError = false;
+          this.planMsg = res.activated ? 'Pagamento aprovado! Plano ativado. 🎉' : `Pagamento em processamento (${res.status}). O plano ativa assim que aprovar.`;
+          this.loadSubscription();
+          this.cdr.detectChanges();
+        },
+        error: err => {
+          this.planMsgError = true;
+          this.planMsg = err?.error?.error?.message || 'Não foi possível confirmar o pagamento. Se você pagou, o plano ativa em instantes.';
+          this.cdr.detectChanges();
+        }
+      });
+    } else if (status === 'falha') {
+      this.isDrawerOpen = true;
+      this.activeDrawerTab = 'plans';
+      this.planMsgError = true;
+      this.planMsg = 'Pagamento não concluído. Nenhum valor foi cobrado.';
+    } else if (status === 'pendente') {
+      this.isDrawerOpen = true;
+      this.activeDrawerTab = 'plans';
+      this.planMsgError = false;
+      this.planMsg = 'Pagamento pendente (ex.: Pix aguardando). O plano ativa quando compensar.';
+    }
   }
 
   cancelSubscription() {

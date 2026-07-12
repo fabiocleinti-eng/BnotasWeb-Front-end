@@ -26,4 +26,13 @@ export class SubscriptionService {
   cancel(): Observable<UserSubscription> {
     return this.http.post<UserSubscription>(`${API_URL}/subscriptions/cancel`, {});
   }
+
+  // === PAGAMENTO (Mercado Pago) ===
+  checkout(planId: string, periodo: 'mensal' | 'anual'): Observable<{ checkoutUrl: string; valor: number }> {
+    return this.http.post<{ checkoutUrl: string; valor: number }>(`${API_URL}/payments/checkout`, { planId, periodo });
+  }
+
+  confirmPayment(paymentId: string): Observable<{ activated: boolean; planId?: string; status?: string }> {
+    return this.http.post<any>(`${API_URL}/payments/confirm`, { paymentId });
+  }
 }

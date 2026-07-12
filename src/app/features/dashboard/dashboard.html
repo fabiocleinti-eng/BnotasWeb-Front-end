@@ -377,8 +377,13 @@
             <button type="button" class="btn-plan"
                     [class.primary]="plan.id !== currentPlanId && plan.price > 0"
                     [disabled]="plan.id === currentPlanId || planActionInProgress"
-                    (click)="subscribeToPlan(plan)">
-              {{ plan.id === currentPlanId ? 'Plano atual' : (planActionInProgress ? 'Aguarde...' : (plan.price > 0 ? 'Assinar' : 'Usar Gratuito')) }}
+                    (click)="subscribeToPlan(plan, 'mensal')">
+              {{ plan.id === currentPlanId ? 'Plano atual' : (planActionInProgress ? 'Aguarde...' : (plan.price > 0 ? 'Assinar mensal' : 'Usar Gratuito')) }}
+            </button>
+            <button type="button" class="btn-plan btn-plan-anual" *ngIf="plan.price > 0 && plan.id !== currentPlanId"
+                    [disabled]="planActionInProgress"
+                    (click)="subscribeToPlan(plan, 'anual')">
+              Anual: R$ {{ plan.price * 10 | number:'1.2-2' }} (2 meses grátis)
             </button>
           </div>
         </div>
