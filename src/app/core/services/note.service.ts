@@ -17,6 +17,11 @@ export class NoteService {
     return this.http.get<Note[]>(`${API_URL}/anotacoes`, params);
   }
 
+  // Exportação: o servidor gera o Markdown e valida o plano (recurso pago)
+  exportNotes(): Observable<string> {
+    return this.http.get(`${API_URL}/anotacoes/export`, { responseType: 'text' });
+  }
+
   // === COMPARTILHAR POR LINK ===
   shareNote(id: number): Observable<{ shareToken: string }> {
     return this.http.post<{ shareToken: string }>(`${API_URL}/anotacoes/${id}/share`, {});

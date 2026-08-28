@@ -16,6 +16,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reset-password/reset-password.component')
       .then(m => m.ResetPasswordComponent)
   },
+  // ROTA PÚBLICA: Confirmação de e-mail (link enviado no cadastro)
+  {
+    path: 'verificar-email',
+    loadComponent: () => import('./features/verificar-email/verificar-email.component')
+      .then(m => m.VerificarEmailComponent)
+  },
   // ROTA PÚBLICA: Nota compartilhada por link (somente leitura)
   {
     path: 'n/:token',

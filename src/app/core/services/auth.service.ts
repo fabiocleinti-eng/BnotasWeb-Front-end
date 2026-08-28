@@ -6,7 +6,7 @@ import { API_URL } from '../api.config';
 
 interface LoginResponse {
   token: string;
-  user: { id: number; email: string; nome?: string; sobrenome?: string; telefone?: string };
+  user: { id: number; email: string; nome?: string; sobrenome?: string; telefone?: string; isAdmin?: boolean };
 }
 
 export interface RegisterData {
@@ -60,8 +60,17 @@ export class AuthService {
     return this.http.post<{ enabled: boolean; backupCodes?: string[] }>(`${API_URL}/usuarios/2fa/enable`, { codigo });
   }
 
+  // === VERIFICAÇÃO DE E-MAIL ===
+  verificarEmail(token: string): Observable<{ verificado: boolean; email: string }> {
+    return this.http.post<{ verificado: boolean; email: string }>(`${API_URL}/verificar-email`, { token });
+  }
+
+  reenviarVerificacao(): Observable<{ enviado: boolean }> {
+    return this.http.post<{ enviado: boolean }>(`${API_URL}/usuarios/reenviar-verificacao`, {});
+  }
+
   // === PERFIL (no servidor) ===
-  getPerfil(): Observable<{ nome: string; sobrenome: string; email: string; telefone?: string; bio?: string; avatarUrl?: string }> {
+  getPerfil(): Observable<{ nome: string; sobrenome: string; email: string; telefone?: string; bio?: string; avatarUrl?: string; isAdmin?: boolean; emailVerificado?: boolean }> {
     return this.http.get<any>(`${API_URL}/usuarios/perfil`);
   }
 
@@ -99,7 +108,7 @@ export class AuthService {
   }
 
   // NOVO: Recupera o usuário salvo
-  getUser(): { id: number, email: string } | null {
+  getUser(): { id: number, email: string, isAdmin?: boolean } | null {
     const userStr = localStorage.getItem(this.USER_KEY);
     return userStr ? JSON.parse(userStr) : null;
   }

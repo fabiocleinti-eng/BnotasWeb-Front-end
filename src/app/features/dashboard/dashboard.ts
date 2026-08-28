@@ -63,6 +63,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   showUrgentModal: boolean = false;
   criticalNotes: Note[] = [];
+
+  // === URGÊNCIA DOS LEMBRETES ===
+  // "agora" é atualizado por um relógio interno para os avisos mudarem sozinhos,
+  // sem precisar recarregar a página.
+  agora: number = Date.now();
+  private relogio: any = null;
+  private readonly UMA_HORA = 3600 * 1000;
+  private readonly UM_DIA = 24 * this.UMA_HORA;
   fontSizes: string[] = ['12', '14', '16', '18', '20', '24', '30'];
 
   isDrawerOpen: boolean = false;
@@ -97,6 +105,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   unlockPwd: string = '';
   unlockBusy: boolean = false;
   unlockMsg: string = '';
+
+  // === ADMIN (conta de testes — flag vem do banco, nunca do código) ===
+  isAdmin: boolean = false;
+
+  // === CONFIRMAÇÃO DE E-MAIL ===
+  emailVerificado: boolean = true;   // assume verificado até o perfil dizer o contrário
+  reenviandoVerificacao: boolean = false;
+  avisoVerificacaoFechado: boolean = false;
+  msgVerificacao: string = '';
 
   // === 2FA (autenticação de dois fatores) ===
   twoFAEnabled: boolean = false;
@@ -173,6 +190,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.initDarkMode();
     this.loadProfileFromServer();
     this.handlePaymentReturn();
+    this.iniciarRelogioDeUrgencia();
     this.loadScratchpad();
     this.loadNotes();
     this.availableColors.forEach(c => this.stackIndices[c] = 0);
@@ -180,6 +198,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.openNotes.forEach(note => { if (note.editor) note.editor.destroy(); });
+    if (this.relogio) clearInterval(this.relogio);
   }
 
   toggleMobileSidebar() { this.isMobileSidebarOpen = !this.isMobileSidebarOpen; }
@@ -421,7 +440,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // LIXEIRA
   // ==========================================
   get notesUsed(): number { return this.totalNotes + this.trashNotes.length; }
-  get isFreePlan(): boolean { return this.currentPlanId === 'free'; }
+  // Admin (flag no banco) enxerga o app como plano pago completo
+  get isFreePlan(): boolean { return !this.isAdmin && this.currentPlanId === 'free'; }
 
   loadTrash() {
     this.trashLoading = true;
@@ -530,10 +550,119 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } catch (_) {}
   }
 
+  // ==========================================
+  // CONFIRMAÇÃO DE E-MAIL
+  // ==========================================
+  get precisaConfirmarEmail(): boolean {
+    return !this.emailVerificado && !this.avisoVerificacaoFechado;
+  }
+
+  fecharAvisoVerificacao() { this.avisoVerificacaoFechado = true; }
+
+  reenviarVerificacao() {
+    if (this.reenviandoVerificacao) return;
+    this.reenviandoVerificacao = true;
+    this.msgVerificacao = '';
+    this.authService.reenviarVerificacao().subscribe({
+      next: () => {
+        this.reenviandoVerificacao = false;
+        this.msgVerificacao = 'Enviamos um novo link. Confira sua caixa de entrada (e o spam).';
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.reenviandoVerificacao = false;
+        this.msgVerificacao = err?.error?.error?.message || 'Não foi possível enviar agora. Tente mais tarde.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==========================================
+  // FOTO DE PERFIL (arquivo do computador)
+  // ==========================================
+  fotoProcessando: boolean = false;
+  fotoErro: string = '';
+
+  /**
+   * Recebe o arquivo escolhido, reduz para 256x256 e converte em JPEG.
+   * Reduzir no navegador evita mandar uma foto de 5 MB para o servidor — e, de
+   * quebra, o redesenho descarta os metadados da imagem (data, modelo da câmera
+   * e localização de GPS, que fotos de celular costumam carregar).
+   */
+  onFotoSelecionada(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const arquivo = input.files?.[0];
+    if (!arquivo) return;
+
+    this.fotoErro = '';
+
+    if (!arquivo.type.startsWith('image/')) {
+      this.fotoErro = 'Escolha um arquivo de imagem (JPG, PNG ou WEBP).';
+      input.value = '';
+      return;
+    }
+    if (arquivo.size > 10 * 1024 * 1024) {
+      this.fotoErro = 'Imagem muito grande (máximo 10 MB).';
+      input.value = '';
+      return;
+    }
+
+    this.fotoProcessando = true;
+    const leitor = new FileReader();
+
+    leitor.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const LADO = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = LADO;
+        canvas.height = LADO;
+        const ctx = canvas.getContext('2d')!;
+
+        // Recorta o centro da foto para o quadrado não distorcer
+        const menorLado = Math.min(img.width, img.height);
+        const x = (img.width - menorLado) / 2;
+        const y = (img.height - menorLado) / 2;
+        ctx.drawImage(img, x, y, menorLado, menorLado, 0, 0, LADO, LADO);
+
+        this.userProfile.avatarUrl = canvas.toDataURL('image/jpeg', 0.85);
+        this.fotoProcessando = false;
+        input.value = '';
+        this.cdr.detectChanges();
+      };
+      img.onerror = () => {
+        this.fotoProcessando = false;
+        this.fotoErro = 'Não foi possível ler esta imagem.';
+        input.value = '';
+        this.cdr.detectChanges();
+      };
+      img.src = leitor.result as string;
+    };
+
+    leitor.onerror = () => {
+      this.fotoProcessando = false;
+      this.fotoErro = 'Falha ao abrir o arquivo.';
+      this.cdr.detectChanges();
+    };
+
+    leitor.readAsDataURL(arquivo);
+  }
+
+  removerFoto() {
+    this.userProfile.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.userProfile.name || 'User')}&background=6200ea&color=fff`;
+    this.fotoErro = '';
+  }
+
+  get fotoEhArquivo(): boolean {
+    return (this.userProfile.avatarUrl || '').startsWith('data:');
+  }
+
   // Perfil agora vive no SERVIDOR (localStorage vira só cache)
   loadProfileFromServer(): void {
     this.authService.getPerfil().subscribe({
       next: p => {
+        this.isAdmin = !!p.isAdmin;
+        this.emailVerificado = p.emailVerificado !== false;
         if (p.nome) { this.userProfile.name = p.nome; this.userName = p.nome; }
         if (p.bio != null) this.userProfile.bio = p.bio;
         if (p.avatarUrl) this.userProfile.avatarUrl = p.avatarUrl;
@@ -562,7 +691,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.closeDrawer();
   }
 
-  logout() { if(confirm('Tem certeza que deseja sair?')) { this.authService.logout(); } }
+  // Confirmação de saída em modal próprio.
+  // O confirm() do navegador é engolido quando o usuário marca "impedir que esta
+  // página crie caixas de diálogo" — aí ele devolve false e o botão parece morto.
+  mostrarConfirmSaida: boolean = false;
+
+  logout() { this.mostrarConfirmSaida = true; }
+  cancelarSaida() { this.mostrarConfirmSaida = false; }
+  confirmarSaida() {
+    this.mostrarConfirmSaida = false;
+    this.authService.logout();
+  }
 
   private get scratchpadKey(): string {
       const user = this.authService.getUser();
@@ -627,6 +766,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         next: (notes: Note[]) => {
           this.notesLoadError = false;
           this.totalNotes = notes.length;
+          this.todasAsNotas = notes;
+          this.agora = Date.now();
           this.organizeNotes(notes);
           this.checkAlerts(notes);
           this.cdr.detectChanges();
@@ -650,6 +791,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         groups[color].count++;
       });
       this.noteGroups = Object.values(groups);
+      this.reordenarPorUrgencia();
       if (this.noteGroups.length > 0) this.noteGroups[0].isOpen = true;
   }
 
@@ -674,17 +816,119 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return text.length > 40 ? text.substring(0, 40) + '...' : (text || 'Nova nota...');
   }
 
-  checkAlerts(notes: Note[]) {
-      const agora = new Date();
-      const alertas = notes.filter(n => {
-        if (!n.dataLembrete) return false;
-        const dataLembrete = new Date(n.dataLembrete);
-        return dataLembrete < agora;
+  // ==========================================
+  // URGÊNCIA DOS LEMBRETES
+  // ==========================================
+
+  /** Quanto falta (ou faz) em milissegundos. null = nota sem lembrete. */
+  private prazoDe(note: Note): number | null {
+    if (!note?.dataLembrete) return null;
+    const t = new Date(note.dataLembrete).getTime();
+    return Number.isNaN(t) ? null : t - this.agora;
+  }
+
+  /** Classifica a nota para colorir e ordenar: quanto menor o número, mais urgente. */
+  urgenciaDe(note: Note): 'vencida' | 'agora' | 'hoje' | 'semana' | null {
+    const falta = this.prazoDe(note);
+    if (falta === null) return null;
+    if (falta < 0) return 'vencida';
+    if (falta <= 2 * this.UMA_HORA) return 'agora';   // menos de 2h
+    if (falta <= this.UM_DIA) return 'hoje';
+    if (falta <= 7 * this.UM_DIA) return 'semana';
+    return null;
+  }
+
+  private pesoUrgencia(note: Note): number {
+    const u = this.urgenciaDe(note);
+    return u === 'vencida' ? 0 : u === 'agora' ? 1 : u === 'hoje' ? 2 : u === 'semana' ? 3 : 4;
+  }
+
+  /** Texto curto para o card: "faltam 3h", "vencida há 2 dias". */
+  tempoRestante(note: Note): string {
+    const falta = this.prazoDe(note);
+    if (falta === null) return '';
+    const venceu = falta < 0;
+    const ms = Math.abs(falta);
+    const dias = Math.floor(ms / this.UM_DIA);
+    const horas = Math.floor(ms / this.UMA_HORA);
+    const min = Math.floor(ms / 60000);
+
+    let quanto: string;
+    if (dias >= 1) quanto = `${dias} dia${dias > 1 ? 's' : ''}`;
+    else if (horas >= 1) quanto = `${horas}h`;
+    else quanto = `${Math.max(min, 1)} min`;
+
+    return venceu ? `vencida há ${quanto}` : `faltam ${quanto}`;
+  }
+
+  /** Um grupo (cor) fica marcado se qualquer nota dele estiver em alerta. */
+  grupoTemUrgencia(group: any): boolean {
+    return group?.notes?.some((n: Note) => ['vencida', 'agora'].includes(this.urgenciaDe(n) as string));
+  }
+
+  /** Relógio: reavalia os prazos de tempo em tempo, sem recarregar a página. */
+  private iniciarRelogioDeUrgencia() {
+    this.relogio = setInterval(() => {
+      this.agora = Date.now();
+      this.reordenarPorUrgencia();
+      this.checkAlerts(this.todasAsNotas);
+      this.cdr.detectChanges();
+    }, 30000);
+  }
+
+  private todasAsNotas: Note[] = [];
+
+  /** Ordena as urgentes primeiro — dentro de cada cor e entre as cores. */
+  private reordenarPorUrgencia() {
+    this.noteGroups.forEach(g => {
+      g.notes.sort((a: Note, b: Note) => {
+        const d = this.pesoUrgencia(a) - this.pesoUrgencia(b);
+        if (d !== 0) return d;
+        const pa = this.prazoDe(a), pb = this.prazoDe(b);
+        if (pa !== null && pb !== null) return pa - pb;   // prazo mais próximo primeiro
+        if (pa !== null) return -1;
+        if (pb !== null) return 1;
+        return 0;
       });
-      if (alertas.length > 0 && this.alertManager.deveAbrirModal()) {
+      // o card em destaque do deck volta a ser o primeiro (o mais urgente)
+      if (this.grupoTemUrgencia(g)) g.activeIndex = 0;
+    });
+
+    // grupos com nota urgente aparecem antes
+    this.noteGroups.sort((a, b) => {
+      const ua = Math.min(...a.notes.map((n: Note) => this.pesoUrgencia(n)));
+      const ub = Math.min(...b.notes.map((n: Note) => this.pesoUrgencia(n)));
+      return ua - ub;
+    });
+  }
+
+  // Enquanto true, o relógio não reabre o aviso — o usuário já o viu e fechou
+  private alertaDispensado: boolean = false;
+
+  checkAlerts(notes: Note[]) {
+      // Entram no aviso as vencidas E as que estão a menos de 2 horas do prazo —
+      // antes só aparecia depois de estourar, quando já não dava para agir.
+      const alertas = notes.filter(n => ['vencida', 'agora'].includes(this.urgenciaDe(n) as string));
+
+      if (alertas.length === 0) {
+        this.showUrgentModal = false;
+        this.alertaDispensado = false;
+        return;
+      }
+
+      // Não interrompe quem está no meio de outra coisa: o aviso cobre a tela inteira
+      // e reabri-lo sozinho travaria o uso das configurações, da lixeira ou do desbloqueio.
+      if (this.alertaDispensado || this.isDrawerOpen || this.isTrashOpen || this.unlockTarget) return;
+
+      if (this.alertManager.deveAbrirModal()) {
         this.criticalNotes = alertas;
         this.showUrgentModal = true;
       }
+  }
+
+  fecharAlerta() {
+    this.showUrgentModal = false;
+    this.alertaDispensado = true;
   }
 
   createNote() {
@@ -866,7 +1110,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if(n&&n.id){this.noteService.updateNote(n.id,{dataLembrete:null}).subscribe(()=>{this.loadNotes();if(this.criticalNotes.length===1)this.showUrgentModal=false;});this.criticalNotes=this.criticalNotes.filter(x=>x.id!==n.id);}
     else{this.criticalNotes.forEach(x=>{if(x.id)this.noteService.updateNote(x.id,{dataLembrete:null}).subscribe()});this.criticalNotes=[];this.showUrgentModal=false;setTimeout(()=>this.loadNotes(),500);} 
   }
-  snoozeTask() { this.alertManager.snooze(); this.showUrgentModal = false; }
+  snoozeTask() { this.alertManager.snooze(); this.fecharAlerta(); }
   // Busca no SERVIDOR com debounce (não baixa mais todas as notas)
   private searchTimer: any = null;
   onSearch(event: any) {
@@ -929,11 +1173,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.downloadFile(`${(n.titulo || 'nota').replace(/[^\w\sà-ú-]/gi, '')}.md`, md);
   }
 
+  // O arquivo é gerado pelo SERVIDOR, que valida o plano — a tela só baixa o resultado
   exportAllNotes() {
-    if (this.isFreePlan) { alert('Exportar notas é um recurso dos planos pagos. Faça upgrade na aba Planos. 🚀'); return; }
-    this.noteService.getNotes().subscribe(notes => {
-      const md = notes.map(n => `# ${n.titulo || 'Sem título'}\n\n${n.protegida ? '_(nota protegida — conteúdo não exportado)_' : this.htmlToMarkdown(n.conteudo)}`).join('\n\n---\n\n');
-      this.downloadFile('minhas-notas-bnotasweb.md', md + '\n');
+    this.noteService.exportNotes().subscribe({
+      next: md => this.downloadFile('minhas-notas-bnotasweb.md', md),
+      error: err => alert(err?.error?.error?.message || 'Exportar notas é um recurso dos planos pagos. Faça upgrade na aba Planos. 🚀')
     });
   }
 
@@ -944,7 +1188,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private recognition: any = null;
 
   toggleVoice(n: any) {
-    if (this.currentPlanId !== 'pro') { alert('Ditado por voz é exclusivo do plano Pro. Faça upgrade na aba Planos. 🎤'); return; }
+    if (!this.isAdmin && this.currentPlanId !== 'pro') { alert('Ditado por voz é exclusivo do plano Pro. Faça upgrade na aba Planos. 🎤'); return; }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) { alert('Seu navegador não suporta ditado por voz. Use Chrome ou Edge.'); return; }
 

@@ -14,7 +14,20 @@
         </div>
     </div>
   
-    <div class="body-layout">
+    <div class="faixa-verificar" *ngIf="precisaConfirmarEmail">
+      <span class="faixa-texto">
+        ✉️ <b>Confirme seu e-mail</b> para receber os lembretes das suas notas.
+        <span class="faixa-msg" *ngIf="msgVerificacao">{{ msgVerificacao }}</span>
+      </span>
+      <span class="faixa-acoes">
+        <button type="button" class="btn-faixa" [disabled]="reenviandoVerificacao" (click)="reenviarVerificacao()">
+          {{ reenviandoVerificacao ? 'Enviando...' : 'Reenviar e-mail' }}
+        </button>
+        <button type="button" class="btn-faixa-fechar" (click)="fecharAvisoVerificacao()" aria-label="Fechar">✕</button>
+      </span>
+    </div>
+
+    <div class="body-layout" [class.com-faixa]="precisaConfirmarEmail">
   
         <div class="mobile-backdrop" *ngIf="isMobileSidebarOpen" (click)="toggleMobileSidebar()"></div>
   
@@ -39,19 +52,30 @@
                  <div class="group-title">
                    <span class="color-dot-indicator" [style.background]="group.color"></span>
                    <span>{{ group.count }} notas</span>
+                   <span class="alerta-grupo" *ngIf="grupoTemUrgencia(group)" title="Há nota com prazo estourando">⏰</span>
                  </div>
                  <span class="arrow-icon">{{ group.isOpen ? '▼' : '▶' }}</span>
               </div>
               <div class="deck-container" *ngIf="group.isOpen" (wheel)="onDeckWheel($event, group)">
-                 <div class="deck-card" appTiltCard *ngFor="let note of group.notes; let i = index" 
+                 <div class="deck-card" appTiltCard *ngFor="let note of group.notes; let i = index"
                    (click)="openNote(note)" [class.active]="i === group.activeIndex"
+                   [class.urg-vencida]="urgenciaDe(note) === 'vencida'"
+                   [class.urg-agora]="urgenciaDe(note) === 'agora'"
+                   [class.urg-hoje]="urgenciaDe(note) === 'hoje'"
+                   [class.urg-semana]="urgenciaDe(note) === 'semana'"
                    [class.prev]="group.count > 1 && i === (group.activeIndex - 1 + group.count) % group.count"
                    [class.next]="group.count > 1 && i === (group.activeIndex + 1) % group.count"
                    [style.background]="getCardBackground(note.cor || '#fff')" [style.border-left-color]="note.cor || '#ccc'">
                     <div class="card-content">
                         <div class="card-top-row"><div class="note-title"><span *ngIf="note.protegida">🔒 </span>{{ note.titulo || 'Sem Título' }}</div></div>
                         <div class="note-preview">{{ getPreview(note) }}</div>
-                        <div class="card-bottom"><span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span></div>
+                        <div class="card-bottom">
+                          <span class="note-date">{{ note.dataCriacao | date:'dd/MM' }}</span>
+                          <span class="selo-prazo" *ngIf="urgenciaDe(note)" [attr.data-urg]="urgenciaDe(note)">
+                            {{ urgenciaDe(note) === 'vencida' ? '🔴' : urgenciaDe(note) === 'agora' ? '🚨' : urgenciaDe(note) === 'hoje' ? '🟠' : '🟡' }}
+                            {{ tempoRestante(note) }}
+                          </span>
+                        </div>
                     </div>
                     <div class="card-actions"><button class="btn-mini-action btn-trash" (click)="deleteFromSidebar($event, note)">🗑</button></div>
                  </div>
@@ -64,6 +88,7 @@
             <div class="note-limit" *ngIf="isFreePlan" [class.limit-full]="notesUsed >= FREE_NOTE_LIMIT">
               {{ notesUsed }}/{{ FREE_NOTE_LIMIT }} notas (plano gratuito)
             </div>
+            <div class="note-limit admin-badge" *ngIf="isAdmin">⚡ Modo administrador (todos os recursos)</div>
             <button type="button" class="btn-open-trash" (click)="openTrash()">
               🗑️ Lixeira
               <span class="trash-badge" *ngIf="trashNotes.length > 0">{{ trashNotes.length }}</span>
@@ -241,8 +266,23 @@
           <div class="profile-photo-preview">
             <img [src]="userProfile.avatarUrl" alt="Sua foto" class="profile-photo-img">
           </div>
-          <label class="drawer-label">URL da foto (opcional)</label>
-          <input type="url" [(ngModel)]="userProfile.avatarUrl" class="drawer-input" placeholder="https://... ou deixe em branco para iniciais">
+
+          <div class="foto-acoes">
+            <label class="btn-foto">
+              📁 Escolher do computador
+              <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFotoSelecionada($event)" hidden>
+            </label>
+            <button type="button" class="btn-foto secundario" *ngIf="fotoEhArquivo" (click)="removerFoto()">Remover</button>
+          </div>
+
+          <div class="foto-status" *ngIf="fotoProcessando">Preparando imagem...</div>
+          <div class="foto-status erro" *ngIf="fotoErro">{{ fotoErro }}</div>
+          <div class="foto-dica" *ngIf="fotoEhArquivo">Imagem pronta — clique em <b>Salvar</b> abaixo para guardar.</div>
+
+          <details class="foto-url-avancado">
+            <summary>Ou usar o endereço de uma imagem da internet</summary>
+            <input type="url" [(ngModel)]="userProfile.avatarUrl" class="drawer-input" placeholder="https://... ou deixe em branco para iniciais">
+          </details>
         </div>
         <label class="drawer-label">Nome</label>
         <input type="text" [(ngModel)]="userProfile.name" class="drawer-input" placeholder="Seu nome">
@@ -398,6 +438,18 @@
     </footer>
   </div>
   
+  <div class="modal-overlay modal-sair" *ngIf="mostrarConfirmSaida" (click)="cancelarSaida()">
+    <div class="modal-content sair-modal" (click)="$event.stopPropagation()">
+      <div class="sair-icone">👋</div>
+      <h2 class="sair-titulo">Sair da conta?</h2>
+      <p class="sair-texto">Suas notas continuam salvas. Você precisará entrar novamente.</p>
+      <div class="sair-acoes">
+        <button type="button" class="btn-sair-cancelar" (click)="cancelarSaida()">Ficar</button>
+        <button type="button" class="btn-sair-confirmar" (click)="confirmarSaida()">Sair</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="unlockTarget" (click)="cancelUnlock()">
     <div class="modal-content unlock-modal" (click)="$event.stopPropagation()">
       <div class="unlock-icon">🔒</div>
@@ -444,6 +496,22 @@
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showUrgentModal && criticalNotes.length > 0">
-    <div class="modal-content atencao-maxima"><div class="modal-header-alert"><div class="modal-icon pulsing">🚨</div><h2>Atenção!</h2></div><div class="urgent-list"><div *ngFor="let note of criticalNotes" class="urgent-item"><strong>{{note.titulo}}</strong><button class="btn-check-mini" (click)="markAsDone(note)">✅</button></div></div><div class="modal-actions"><button class="btn-modal btn-success" (click)="markAsDone()">Concluir</button><button class="btn-modal btn-warning" (click)="snoozeTask()">Reagendar</button></div></div>
+  <div class="modal-overlay" *ngIf="showUrgentModal && criticalNotes.length > 0" (click)="fecharAlerta()">
+    <div class="modal-content atencao-maxima" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-fechar-alerta" (click)="fecharAlerta()" aria-label="Fechar aviso">✕</button>
+      <div class="modal-header-alert"><div class="modal-icon pulsing">🚨</div><h2>Atenção!</h2></div>
+      <div class="urgent-list">
+        <div *ngFor="let note of criticalNotes" class="urgent-item">
+          <div class="urgent-info">
+            <strong>{{ note.titulo || 'Sem título' }}</strong>
+            <span class="urgent-prazo" [attr.data-urg]="urgenciaDe(note)">{{ tempoRestante(note) }}</span>
+          </div>
+          <button class="btn-check-mini" (click)="markAsDone(note)" title="Marcar como concluída">✅</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-success" (click)="markAsDone()">Concluir</button>
+        <button class="btn-modal btn-warning" (click)="snoozeTask()">Lembrar depois</button>
+      </div>
+    </div>
   </div>

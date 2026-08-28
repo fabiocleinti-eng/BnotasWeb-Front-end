@@ -559,3 +559,134 @@ html, body {
 }
 /* Botão do plano anual */
 .btn-plan-anual { margin-top: 6px; font-size: 0.8rem; border-style: dashed; }
+
+/* =========================================
+   URGÊNCIA DOS LEMBRETES (cards da barra lateral)
+   A borda pulsa para chamar atenção sem tirar a cor do post-it
+   ========================================= */
+@keyframes pulsar-vencida {
+  0%   { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.75), 0 6px 18px rgba(0,0,0,0.12); }
+  70%  { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0),  0 6px 18px rgba(0,0,0,0.12); }
+  100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0),     0 6px 18px rgba(0,0,0,0.12); }
+}
+@keyframes pulsar-agora {
+  0%   { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.65), 0 6px 18px rgba(0,0,0,0.12); }
+  70%  { box-shadow: 0 0 0 9px rgba(230, 81, 0, 0),   0 6px 18px rgba(0,0,0,0.12); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0),     0 6px 18px rgba(0,0,0,0.12); }
+}
+
+.deck-card.urg-vencida { border: 2px solid #d32f2f !important; animation: pulsar-vencida 1.5s ease-out infinite; }
+.deck-card.urg-agora   { border: 2px solid #e65100 !important; animation: pulsar-agora 2s ease-out infinite; }
+.deck-card.urg-hoje    { border: 2px solid #f9a825 !important; }
+.deck-card.urg-semana  { border: 1px solid #c5b358 !important; }
+
+/* só o card em destaque pulsa — os de trás ficam estáticos para não poluir */
+.deck-card.urg-vencida:not(.active),
+.deck-card.urg-agora:not(.active) { animation: none; }
+
+.selo-prazo {
+  font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  background: #f5f5f5; color: #666; white-space: nowrap;
+}
+.selo-prazo[data-urg="vencida"] { background: #ffebee; color: #c62828; }
+.selo-prazo[data-urg="agora"]   { background: #fff3e0; color: #e65100; }
+.selo-prazo[data-urg="hoje"]    { background: #fffde7; color: #f57f17; }
+.selo-prazo[data-urg="semana"]  { background: #f5f5f5; color: #777; }
+
+.alerta-grupo { font-size: 0.8rem; animation: pulsar-icone 1.5s ease-in-out infinite; }
+@keyframes pulsar-icone { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* Modal de lembretes: prazo ao lado do título */
+.urgent-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.urgent-prazo { font-size: 0.75rem; font-weight: 700; color: #c62828; }
+.urgent-prazo[data-urg="agora"] { color: #e65100; }
+
+/* Modo escuro */
+body.dark-theme .selo-prazo { background: #2a2a38 !important; color: #b0b0c0 !important; }
+body.dark-theme .selo-prazo[data-urg="vencida"] { background: #3a2226 !important; color: #ef9a9a !important; }
+body.dark-theme .selo-prazo[data-urg="agora"]   { background: #3a2c1f !important; color: #ffb74d !important; }
+body.dark-theme .selo-prazo[data-urg="hoje"]    { background: #33301f !important; color: #ffd54f !important; }
+
+/* =========================================
+   FOTO DE PERFIL (upload do computador)
+   ========================================= */
+.foto-acoes { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+.btn-foto {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: #ede7f6; color: #6200ea; border: 1px solid #d1c4e9; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.btn-foto:hover { background: #d1c4e9; }
+.btn-foto.secundario { background: #fff; color: #c62828; border-color: #ffcdd2; }
+.btn-foto.secundario:hover { background: #ffebee; }
+.foto-status { text-align: center; font-size: 0.8rem; color: #6200ea; margin-bottom: 6px; }
+.foto-status.erro { color: #c62828; }
+.foto-dica { text-align: center; font-size: 0.78rem; color: #2e7d32; margin-bottom: 6px; }
+.foto-url-avancado { margin-top: 6px; }
+.foto-url-avancado summary { font-size: 0.78rem; color: #888; cursor: pointer; padding: 4px 0; }
+.foto-url-avancado summary:hover { color: #6200ea; }
+.foto-url-avancado .drawer-input { margin-top: 6px; }
+
+body.dark-theme .btn-foto { background: #2a2338 !important; color: #b794f6 !important; border-color: #4a3a5a !important; }
+body.dark-theme .btn-foto.secundario { background: #2a2a38 !important; color: #ef9a9a !important; border-color: #5a3a3f !important; }
+body.dark-theme .foto-url-avancado summary { color: #9a9aac !important; }
+
+/* Botão de fechar o aviso de prazo (o modal cobre a tela inteira) */
+.modal-content.atencao-maxima { position: relative; }
+.btn-fechar-alerta {
+  position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+  border: none; background: #f0f0f0; color: #666; border-radius: 50%;
+  font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.btn-fechar-alerta:hover { background: #e0e0e0; color: #333; }
+body.dark-theme .btn-fechar-alerta { background: #2a2a38 !important; color: #b0b0c0 !important; }
+
+/* Confirmação de saída — precisa ficar acima do painel lateral (3500) */
+.modal-sair { z-index: 5000; }
+.sair-modal {
+  background: #fff; border-radius: 16px; width: 90%; max-width: 340px; padding: 2rem;
+  text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+}
+.sair-icone { font-size: 2.6rem; }
+.sair-titulo { margin: 8px 0 6px; font-size: 1.25rem; color: #333; }
+.sair-texto { font-size: 0.88rem; color: #777; margin: 0 0 18px; line-height: 1.5; }
+.sair-acoes { display: flex; gap: 10px; }
+.btn-sair-cancelar, .btn-sair-confirmar {
+  flex: 1; padding: 11px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; font-size: 0.95rem;
+}
+.btn-sair-cancelar { background: #f0f0f0; color: #555; }
+.btn-sair-cancelar:hover { background: #e0e0e0; }
+.btn-sair-confirmar { background: #c62828; color: #fff; }
+.btn-sair-confirmar:hover { background: #b71c1c; }
+body.dark-theme .sair-modal { background: #23232f !important; }
+body.dark-theme .sair-titulo { color: #e0e0e8 !important; }
+body.dark-theme .btn-sair-cancelar { background: #2a2a38 !important; color: #d0d0d8 !important; }
+
+/* =========================================
+   FAIXA "CONFIRME SEU E-MAIL"
+   Fica logo abaixo do cabeçalho fixo (60px)
+   ========================================= */
+.faixa-verificar {
+  position: fixed; top: 60px; left: 0; right: 0; z-index: 1900;
+  background: #fff8e1; border-bottom: 1px solid #ffe082; color: #8d6e00;
+  padding: 8px 16px; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
+}
+.faixa-texto { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.faixa-msg { color: #2e7d32; font-weight: 600; }
+.faixa-acoes { display: inline-flex; align-items: center; gap: 8px; }
+.btn-faixa {
+  background: #f9a825; color: #fff; border: none; border-radius: 8px; padding: 5px 12px;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.btn-faixa:hover { background: #f57f17; }
+.btn-faixa:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-faixa-fechar {
+  background: transparent; border: none; color: #8d6e00; cursor: pointer; font-size: 0.9rem; padding: 4px;
+}
+/* Empurra o conteúdo para a faixa não cobrir a barra lateral */
+.body-layout.com-faixa { margin-top: 96px; height: calc(100% - 96px); }
+
+body.dark-theme .faixa-verificar { background: #33301f !important; border-color: #5a5030 !important; color: #ffd54f !important; }
+body.dark-theme .btn-faixa-fechar { color: #ffd54f !important; }
